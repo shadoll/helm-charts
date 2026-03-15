@@ -43,19 +43,23 @@ jobs:
           git push
 
       - name: Send Signal Notification
-        if: |
-          steps.git-check.outputs.updates == 'true' &&
-          secrets.SIGNAL_URL != '' &&
-          secrets.SIGNAL_SENDER != '' &&
-          secrets.SIGNAL_RECIPIENT != ''
+        if: steps.git-check.outputs.updates == 'true'
+        env:
+          SIGNAL_URL: ${{ secrets.SIGNAL_URL }}
+          SIGNAL_SENDER: ${{ secrets.SIGNAL_SENDER }}
+          SIGNAL_RECIPIENT: ${{ secrets.SIGNAL_RECIPIENT }}
         run: |
+          if [ -z "$SIGNAL_URL" ] || [ -z "$SIGNAL_SENDER" ] || [ -z "$SIGNAL_RECIPIENT" ]; then
+            echo "Signal secrets not fully configured, skipping notification."
+            exit 0
+          fi
           SUMMARY=$(cat update_summary.txt)
           MESSAGE="🚀 **Helm Charts Updated**\n\n$SUMMARY\n\nView changes: https://github.com/shadoll/helm-charts/commits/main"
           
-          curl -X POST "${{ secrets.SIGNAL_URL }}" \
+          curl -X POST "$SIGNAL_URL" \
                -H "Content-Type: application/json" \
                -d "{
                  \"message\": \"$MESSAGE\",
-                 \"number\": \"${{ secrets.SIGNAL_SENDER }}\",
-                 \"recipients\": [\"${{ secrets.SIGNAL_RECIPIENT }}\"]
+                 \"number\": \"$SIGNAL_SENDER\",
+                 \"recipients\": [\"$SIGNAL_RECIPIENT\"]
                }"

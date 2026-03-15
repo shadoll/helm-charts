@@ -52,7 +52,11 @@ spec:
 
 ## Maintenance
 
-This repository follows automated version tracking where possible. For manual updates, modify the `appVersion` and increment the `version` in the respective `Chart.yaml`.
+To enable automated Signal alerts for chart updates, configure the following **GitHub Secrets** in this repository:
+
+- `SIGNAL_URL`: The full URL to your Signal gateway (e.g. `https://signal.h.shadoll.dev/v2/send`).
+- `SIGNAL_SENDER`: The phone number used to send the message.
+- `SIGNAL_RECIPIENT`: The phone number(s) to receive the alert.
 
 ---
 © 2026 Shadoll. Managed with ❤️ for the Home Lab.

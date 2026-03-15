@@ -1,0 +1,6 @@
+apiVersion: v2
+name: jellyfin
+description: A Helm chart for Jellyfin media server with Postgres support
+type: application
+version: 0.1.9
+appVersion: "10.11.6"

@@ -1,0 +1,47 @@
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "jellyfin.fullname" . }}-backup
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "jellyfin.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: {{ .Values.backup.image }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Backup Jellyfin database
+              pg_dump -h {{ .Values.postgres.host }} -U {{ .Values.postgres.user }} -d $DB_NAME | gzip > /backup/$DB_NAME-$(date +%Y%m%d-%H%M%S).sql.gz
+              # Retention: Delete backups older than specified days
+              find /backup -name "$DB_NAME-*.sql.gz" -mtime +$RETENTION_DAYS -delete
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret }}
+                  key: JELLYFIN_POSTGRESQL_PASSWORD
+            - name: DB_NAME
+              value: {{ .Values.postgres.db | quote }}
+            - name: RETENTION_DAYS
+              value: {{ .Values.backup.retentionDays | quote }}
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: {{ .Values.backup.storagePath }}
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure
+{{- end }}

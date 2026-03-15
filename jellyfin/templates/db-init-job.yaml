@@ -1,0 +1,94 @@
+{{- if .Values.dbInit.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "jellyfin.fullname" . }}-db-init
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+    {{- include "jellyfin.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          image: {{ .Values.dbInit.image }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -ex
+              # Set admin user from secret or values
+              if [ -n "$ADMIN_USER_FROM_SECRET" ]; then
+                PGUSER=$ADMIN_USER_FROM_SECRET
+              else
+                PGUSER={{ .Values.postgres.adminUser | quote }}
+              fi
+              export PGUSER
+              
+              # Wait for PostgreSQL to be ready
+              until pg_isready -h $PGHOST -p $PGPORT -U $PGUSER; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 2
+              done
+
+              # Connect as admin user to create the jellyfin user and database
+              export PGPASSWORD=$POSTGRES_ADMIN_PASSWORD
+
+              # Create or update database user password
+              echo "Ensuring $POSTGRES_USER user exists with correct password..."
+              if psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -tc "SELECT 1 FROM pg_roles WHERE rolname='$POSTGRES_USER'" | grep -q 1; then
+                psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -c "ALTER USER \"$POSTGRES_USER\" WITH PASSWORD '${JELLYFIN_PASSWORD}';"
+              else
+                psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -c "CREATE USER \"$POSTGRES_USER\" WITH PASSWORD '${JELLYFIN_PASSWORD}';"
+              fi
+
+              # Create Jellyfin database if it doesn't exist
+              echo "Creating $POSTGRES_DB database..."
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB'" | grep -q 1 || \
+                psql -h $PGHOST -p $PGPORT -U $PGUSER -d postgres -c "CREATE DATABASE \"$POSTGRES_DB\" OWNER \"$POSTGRES_USER\";"
+
+              # Grant all privileges to jellyfin user
+              echo "Granting privileges..."
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d "$POSTGRES_DB" -c "GRANT ALL PRIVILEGES ON DATABASE \"$POSTGRES_DB\" TO \"$POSTGRES_USER\";"
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d "$POSTGRES_DB" -c "GRANT ALL PRIVILEGES ON SCHEMA public TO \"$POSTGRES_USER\";"
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d "$POSTGRES_DB" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"$POSTGRES_USER\";"
+              psql -h $PGHOST -p $PGPORT -U $PGUSER -d "$POSTGRES_DB" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO \"$POSTGRES_USER\";"
+
+              echo "Database initialization complete."
+          env:
+            - name: PGHOST
+              value: {{ .Values.postgres.host | quote }}
+            - name: PGPORT
+              value: {{ .Values.postgres.port | quote }}
+            - name: ADMIN_USER
+              value: {{ .Values.postgres.adminUser | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.db | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: POSTGRES_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.adminSecret | default .Values.postgres.existingSecret }}
+                  key: {{ .Values.postgres.adminSecretKey }}
+            {{- if .Values.postgres.adminUserKey }}
+            - name: ADMIN_USER_FROM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.adminSecret | default .Values.postgres.existingSecret }}
+                  key: {{ .Values.postgres.adminUserKey }}
+            {{- end }}
+            - name: JELLYFIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret }}
+                  key: JELLYFIN_POSTGRESQL_PASSWORD
+          resources:
+            {{- toYaml .Values.dbInit.resources | nindent 12 }}
+{{- end }}

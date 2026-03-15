@@ -1,0 +1,115 @@
+# Default values for jellyfin.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/rogly-net/jellyfin-postgresql
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v10.11.6"
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect-to-https@kubernetescrd
+  hosts:
+    - host: jellyfin.lan
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: jellyfin-tls
+  #    hosts:
+  #      - jellyfin.lan
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "8"
+    memory: 4Gi
+
+persistence:
+  config:
+    enabled: true
+    type: hostPath # or pvc
+    hostPath: /srv/data/jellyfin
+    # existingClaim: jellyfin-config
+    mountPath: /config
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
+  media:
+    enabled: true
+    type: hostPath
+    hostPath: /storage/media
+    mountPath: /storage/media
+  dri:
+    enabled: true
+    type: hostPath
+    hostPath: /dev/dri
+    mountPath: /dev/dri
+  # Additional volumes (like sas14, sas16, etc. in jellyfin-hs)
+  extraVolumes: []
+  # - name: sas14
+  #   hostPath:
+  #     path: /storage/sas14
+  #     type: DirectoryOrCreate
+  extraVolumeMounts: []
+  # - name: sas14
+  #   mountPath: /storage/sas14
+
+postgres:
+  host: postgres-tcp.postgres.svc.cluster.local
+  port: 5432
+  db: jellyfin
+  user: jellyfin
+  adminUser: postgres
+  existingSecret: jellyfin-secret
+  adminSecret: "" # If empty, existingSecret is used
+  adminSecretKey: POSTGRES_ADMIN_PASSWORD
+  adminUserKey: "" # If empty, .Values.postgres.adminUser is used
+  # Keys in the secret:
+  # JELLYFIN_POSTGRESQL_PASSWORD
+  # POSTGRES_ADMIN_PASSWORD
+
+dbInit:
+  enabled: true
+  image: postgres:15-alpine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  image: postgres:16
+  retentionDays: 10
+  storagePath: /storage/backups/postgres
+  resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

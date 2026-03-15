@@ -1,0 +1,29 @@
+# OS generated files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# Files that might contain secrets
+*.secret.yaml
+*.sealed.yaml
+.env
+.env.*
+
+# Helm dependencies
+charts/*.tgz
+charts/*/charts/
+charts/*/tmpcharts/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+*.bak

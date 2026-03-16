@@ -44,7 +44,16 @@ spec:
               path: {{ .Values.backup.storagePath }}
               type: DirectoryOrCreate
           restartPolicy: OnFailure
-          nodeSelector: {{ toYaml .Values.nodeSelector | nindent 10 }}
-          affinity: {{ toYaml .Values.affinity | nindent 10 }}
-          tolerations: {{ toYaml .Values.tolerations | nindent 10 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
 {{- end }}

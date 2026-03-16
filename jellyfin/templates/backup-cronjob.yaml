@@ -41,10 +41,10 @@ spec:
           volumes:
           - name: backup-storage
             hostPath:
-            path: {{ .Values.backup.storagePath }}
-            type: DirectoryOrCreate
-      restartPolicy: OnFailure
-      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
-      affinity: {{ toYaml .Values.affinity | nindent 8 }}
-      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+              path: {{ .Values.backup.storagePath }}
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure
+          nodeSelector: {{ toYaml .Values.nodeSelector | nindent 10 }}
+          affinity: {{ toYaml .Values.affinity | nindent 10 }}
+          tolerations: {{ toYaml .Values.tolerations | nindent 10 }}
 {{- end }}

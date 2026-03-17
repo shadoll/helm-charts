@@ -1,0 +1,28 @@
+# Default values for ESPHome Helm Chart
+image:
+  repository: ghcr.io/esphome/esphome
+  pullPolicy: Always
+
+timezone: "Europe/Kyiv"
+usePing: "true"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+hostNetwork: true
+
+volume:
+  hostPath: ""
+
+ingresses: {}
+  # https:
+  #   host: esphome.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - esphome.example.com

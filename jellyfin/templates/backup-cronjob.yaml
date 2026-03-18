@@ -44,6 +44,17 @@ spec:
               path: {{ .Values.backup.storagePath }}
               type: DirectoryOrCreate
           restartPolicy: OnFailure
+          {{- if .Values.backup.node }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - {{ .Values.backup.node }}
+          {{- else }}
           {{- with .Values.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 10 }}
@@ -55,5 +66,6 @@ spec:
           {{- with .Values.tolerations }}
           tolerations:
             {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- end }}
 {{- end }}

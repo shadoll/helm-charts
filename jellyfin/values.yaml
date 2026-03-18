@@ -107,6 +107,8 @@ backup:
   retentionDays: 10
   storagePath: /storage/backups/postgres
   resources: {}
+  # Node to run backup on (hostname). If set, overrides global affinity/tolerations for the backup CronJob.
+  node: ""
 
 nodeSelector: {}
 

@@ -1,0 +1,32 @@
+{{- range $name, $config := .Values.ingresses }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "home-assistant.fullname" $ }}-{{ $name }}
+  {{- if $.Values.namespaceOverride }}
+  namespace: {{ $.Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "home-assistant.labels" $ | nindent 4 }}
+  {{- with $config.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ $config.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "home-assistant.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+  {{- with $config.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

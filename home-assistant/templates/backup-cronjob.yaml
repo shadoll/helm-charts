@@ -1,0 +1,71 @@
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "home-assistant.fullname" . }}-backup
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "home-assistant.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: {{ .Values.backup.image }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Backup Home Assistant database
+              pg_dump -h {{ .Values.backup.postgres.host }} -U {{ .Values.backup.postgres.user }} -d $DB_NAME | gzip > /backup/$DB_NAME-$(date +%Y%m%d-%H%M%S).sql.gz
+              # Retention: Delete backups older than specified days
+              find /backup -name "$DB_NAME-*.sql.gz" -mtime +$RETENTION_DAYS -delete
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backup.postgres.existingSecret }}
+                  key: {{ .Values.backup.postgres.secretKey }}
+            - name: DB_NAME
+              value: {{ .Values.backup.postgres.db | quote }}
+            - name: RETENTION_DAYS
+              value: {{ .Values.backup.retentionDays | quote }}
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: {{ .Values.backup.storagePath }}
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure
+          {{- if .Values.backup.node }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - {{ .Values.backup.node }}
+          {{- else }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- end }}
+{{- end }}

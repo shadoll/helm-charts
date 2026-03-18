@@ -1,0 +1,82 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/home-assistant/home-assistant
+  pullPolicy: Always
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+hostNetwork: true
+
+timezone: "Europe/Kyiv"
+
+homekit:
+  enabled: true
+  port: 21063
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingresses: {}
+  # https:
+  #   host: ha.example.com
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+  #     traefik.ingress.kubernetes.io/router.tls: "true"
+  #     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  #     traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect-to-https@kubernetescrd
+  #   tls:
+  #     - hosts:
+  #         - ha.example.com
+  # lan:
+  #   host: ha.local.lan
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.entrypoints: web
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "512Mi"
+  limits:
+    cpu: "8"
+    memory: "4Gi"
+
+persistence:
+  config:
+    enabled: true
+    type: hostPath
+    hostPath: /srv/data/home-assistant/config
+    mountPath: /config
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
+  media:
+    enabled: true
+    hostPath: /srv/data/home-assistant/media
+    mountPath: /media
+
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  image: postgres:16
+  retentionDays: 10
+  storagePath: /storage/backups/postgres
+  # Node to run backup on (hostname). Overrides global affinity/tolerations.
+  node: ""
+  postgres:
+    host: postgres-tcp.postgres.svc.cluster.local
+    db: homeassistant
+    user: postgres
+    existingSecret: ""
+    secretKey: password
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

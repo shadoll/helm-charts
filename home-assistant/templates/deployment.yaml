@@ -91,9 +91,13 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - --log-file
-            - /dev/null
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Patch HA run script to disable file logging (logs go to stdout via s6)
+              sed -i 's|exec python3 -m homeassistant --config /config|exec python3 -m homeassistant --config /config --log-file /dev/null|' /etc/services.d/home-assistant/run
+              exec /init
           ports:
             - name: http
               containerPort: 8123

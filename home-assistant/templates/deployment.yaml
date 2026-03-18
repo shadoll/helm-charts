@@ -34,7 +34,7 @@ spec:
             - |
               # Redirect HA log files to container stdout
               rm -f /config/home-assistant.log /config/home-assistant.log.1
-              ln -sf /proc/1/fd/1 /config/home-assistant.log
+              ln -sf /dev/stdout /config/home-assistant.log
               ln -sf /dev/null /config/home-assistant.log.1
           volumeMounts:
             - name: config

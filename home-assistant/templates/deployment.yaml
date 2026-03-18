@@ -56,13 +56,12 @@ spec:
             - -c
             - |
               # Build recorder.yaml with postgres connection string
-              cat > /config/recorder.yaml << EOF
-              recorder:
-                db_url: "postgresql://{{ .Values.postgres.user }}:${HA_POSTGRESQL_PASSWORD}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.db }}"
-                db_retry_wait: 15
-                auto_purge: true
-                purge_keep_days: {{ .Values.postgres.purgeKeepDays | default 30 }}
-              EOF
+              printf '%s\n' \
+                "db_url: \"postgresql://{{ .Values.postgres.user }}:${HA_POSTGRESQL_PASSWORD}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.db }}\"" \
+                "db_retry_wait: 15" \
+                "auto_purge: true" \
+                "purge_keep_days: {{ .Values.postgres.purgeKeepDays | default 30 }}" \
+                > /config/recorder.yaml
               # Ensure configuration.yaml includes recorder.yaml
               if ! grep -q 'recorder.yaml' /config/configuration.yaml 2>/dev/null; then
                 echo "" >> /config/configuration.yaml

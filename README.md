@@ -4,7 +4,7 @@ A collection of custom and optimized Helm charts for self-hosted applications on
 
 ## Repository Structure
 
-- `/charts`: Individual application charts (e.g. `jellyfin`).
+- `/<chart-name>`: Individual application charts (e.g. `jellyfin`, `home-assistant`, `esphome`).
 - `/docs`: Detailed application documentation and guides.
 
 ## Quick Start
@@ -20,6 +20,8 @@ cd helm-charts
 | Chart | Description | Status |
 |-------|-------------|--------|
 | [Jellyfin](docs/jellyfin.md) | Media server with PostgreSQL support | Ready |
+| [Home Assistant](docs/home-assistant.md) | Home automation with PostgreSQL recorder and managed secrets | Ready |
+| [ESPHome](docs/esphome.md) | ESPHome dashboard with host network for device discovery | Ready |
 
 ### 3. Usage with FluxCD
 

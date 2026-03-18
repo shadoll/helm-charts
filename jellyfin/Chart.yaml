@@ -5,5 +5,5 @@ type: application
 annotations:
   version-source: github-release:jellyfin/jellyfin
   version-pattern: "s|^v||"
-version: 0.1.13
+version: 0.1.14
 appVersion: "10.11.6"

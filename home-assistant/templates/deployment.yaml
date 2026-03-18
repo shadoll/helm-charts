@@ -25,8 +25,20 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      {{- if or .Values.postgres.enabled .Values.haSecrets.enabled }}
       initContainers:
+        - name: init-config
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Redirect HA log files to container stdout
+              ln -sf /proc/1/fd/1 /config/home-assistant.log
+              # Discard rotated logs
+              ln -sf /dev/null /config/home-assistant.log.1
+          volumeMounts:
+            - name: config
+              mountPath: /config
         {{- if .Values.haSecrets.enabled }}
         - name: init-secrets
           image: busybox:latest
@@ -77,7 +89,6 @@ spec:
             - name: config
               mountPath: /config
         {{- end }}
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

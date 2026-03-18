@@ -32,10 +32,8 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Redirect HA log files to container stdout
+              # Clean up old log files from PVC
               rm -f /config/home-assistant.log /config/home-assistant.log.1
-              ln -sf /dev/stdout /config/home-assistant.log
-              ln -sf /dev/null /config/home-assistant.log.1
           volumeMounts:
             - name: config
               mountPath: /config
@@ -93,6 +91,9 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --log-file
+            - /dev/null
           ports:
             - name: http
               containerPort: 8123

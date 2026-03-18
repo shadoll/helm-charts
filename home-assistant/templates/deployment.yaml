@@ -25,6 +25,37 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
+      {{- if .Values.postgres.enabled }}
+      initContainers:
+        - name: init-recorder
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Build recorder.yaml with postgres connection string
+              cat > /config/recorder.yaml << EOF
+              recorder:
+                db_url: "postgresql://{{ .Values.postgres.user }}:${HA_POSTGRESQL_PASSWORD}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.db }}"
+                db_retry_wait: 15
+                auto_purge: true
+                purge_keep_days: {{ .Values.postgres.purgeKeepDays | default 30 }}
+              EOF
+              # Ensure configuration.yaml includes recorder.yaml
+              if ! grep -q 'recorder.yaml' /config/configuration.yaml 2>/dev/null; then
+                echo "" >> /config/configuration.yaml
+                echo "recorder: !include recorder.yaml" >> /config/configuration.yaml
+              fi
+          env:
+            - name: HA_POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret }}
+                  key: {{ .Values.postgres.passwordKey }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

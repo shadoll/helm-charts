@@ -60,6 +60,30 @@ persistence:
     hostPath: /srv/data/home-assistant/media
     mountPath: /media
 
+postgres:
+  enabled: false
+  host: postgres-tcp.postgres.svc.cluster.local
+  port: 5432
+  db: homeassistant
+  user: ha
+  adminUser: postgres
+  existingSecret: ""
+  passwordKey: HA_POSTGRESQL_PASSWORD
+  adminSecret: ""
+  adminSecretKey: POSTGRES_ADMIN_PASSWORD
+  adminUserKey: ""
+
+dbInit:
+  enabled: false
+  image: postgres:16-alpine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
 backup:
   enabled: false
   schedule: "0 2 * * *"

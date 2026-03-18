@@ -5,5 +5,5 @@ type: application
 annotations:
   version-source: github-release:home-assistant/core
   version-pattern: "s|^v||"
-version: 0.1.3
+version: 0.1.4
 appVersion: "2026.3.1"

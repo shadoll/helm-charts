@@ -60,6 +60,11 @@ persistence:
     hostPath: /srv/data/home-assistant/media
     mountPath: /media
 
+haSecrets:
+  enabled: false
+  # K8s Secret containing key-value pairs to write as /config/secrets.yaml
+  existingSecret: ""
+
 postgres:
   enabled: false
   host: postgres-tcp.postgres.svc.cluster.local

@@ -25,8 +25,30 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      {{- if .Values.postgres.enabled }}
+      {{- if or .Values.postgres.enabled .Values.haSecrets.enabled }}
       initContainers:
+        {{- if .Values.haSecrets.enabled }}
+        - name: init-secrets
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Build secrets.yaml from mounted K8s secret
+              echo "# Managed by Helm - do not edit manually" > /config/secrets.yaml
+              for f in /ha-secrets/*; do
+                key=$(basename "$f")
+                val=$(cat "$f")
+                echo "$key: \"$val\"" >> /config/secrets.yaml
+              done
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: ha-secrets
+              mountPath: /ha-secrets
+              readOnly: true
+        {{- end }}
+        {{- if .Values.postgres.enabled }}
         - name: init-recorder
           image: busybox:latest
           command:
@@ -55,6 +77,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -100,6 +123,11 @@ spec:
           hostPath:
             path: {{ .Values.persistence.media.hostPath }}
             type: DirectoryOrCreate
+        {{- end }}
+        {{- if .Values.haSecrets.enabled }}
+        - name: ha-secrets
+          secret:
+            secretName: {{ .Values.haSecrets.existingSecret }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

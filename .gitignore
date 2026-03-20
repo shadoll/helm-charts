@@ -27,3 +27,4 @@ charts/*/tmpcharts/
 # Temporary files
 tmp/
 *.bak
+update_summary.txt

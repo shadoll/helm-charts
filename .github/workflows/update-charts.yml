@@ -40,6 +40,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: Automated version update for Helm charts"
+          git pull --rebase origin main
           git push
 
       - name: Send Signal Notification

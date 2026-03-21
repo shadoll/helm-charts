@@ -1,0 +1,9 @@
+apiVersion: v2
+name: termix
+description: Termix Helm chart
+type: application
+version: 0.1.0
+appVersion: "1.11.2"
+annotations:
+  version-source: dockerhub-dev:bugattiguy527/termix:^release-[0-9]+\.[0-9]+\.[0-9]+$
+  version-pattern: "s|^release-||"

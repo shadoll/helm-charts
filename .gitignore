@@ -28,3 +28,4 @@ charts/*/tmpcharts/
 tmp/
 *.bak
 update_summary.txt
+errors_summary.txt

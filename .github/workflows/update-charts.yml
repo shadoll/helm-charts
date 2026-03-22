@@ -32,6 +32,11 @@ jobs:
           else
             echo "updates=false" >> $GITHUB_OUTPUT
           fi
+          if [ -f errors_summary.txt ]; then
+            echo "errors=true" >> $GITHUB_OUTPUT
+          else
+            echo "errors=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit and Push Changes
         if: steps.git-check.outputs.updates == 'true'
@@ -43,7 +48,7 @@ jobs:
           git pull --rebase origin main
           git push
 
-      - name: Send Signal Notification
+      - name: Send Signal Notification (Updates)
         if: steps.git-check.outputs.updates == 'true'
         env:
           SIGNAL_URL: ${{ secrets.SIGNAL_URL }}
@@ -56,6 +61,30 @@ jobs:
           fi
           SUMMARY=$(cat update_summary.txt)
           MESSAGE=$(printf '🚀 Helm Charts Updated\n\n%s\n\nView changes: https://github.com/shadoll/helm-charts/commits/main' "$SUMMARY")
+
+          PAYLOAD=$(jq -n \
+            --arg msg "$MESSAGE" \
+            --arg num "$SIGNAL_SENDER" \
+            --arg rec "$SIGNAL_RECIPIENT" \
+            '{message: $msg, number: $num, recipients: [$rec]}')
+
+          curl -X POST "$SIGNAL_URL" \
+               -H "Content-Type: application/json" \
+               -d "$PAYLOAD"
+
+      - name: Send Signal Notification (Errors)
+        if: steps.git-check.outputs.errors == 'true'
+        env:
+          SIGNAL_URL: ${{ secrets.SIGNAL_URL }}
+          SIGNAL_SENDER: ${{ secrets.SIGNAL_SENDER }}
+          SIGNAL_RECIPIENT: ${{ secrets.SIGNAL_RECIPIENT }}
+        run: |
+          if [ -z "$SIGNAL_URL" ] || [ -z "$SIGNAL_SENDER" ] || [ -z "$SIGNAL_RECIPIENT" ]; then
+            echo "Signal secrets not fully configured, skipping notification."
+            exit 0
+          fi
+          ERRORS=$(cat errors_summary.txt)
+          MESSAGE=$(printf '⚠️ Helm Charts Version Check Errors\n\n%s' "$ERRORS")
 
           PAYLOAD=$(jq -n \
             --arg msg "$MESSAGE" \

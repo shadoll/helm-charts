@@ -2,11 +2,10 @@
 # scripts/update-charts.sh
 # Checks for upstream image updates and bumps Helm chart versions automatically.
 
-set -e
-
 # Repository Root
 REPO_ROOT=$(git rev-parse --show-toplevel)
 UPDATES_FOUND=""
+ERRORS_FOUND=""
 
 # Fetch latest version from different sources
 fetch_latest() {
@@ -20,6 +19,11 @@ fetch_latest() {
             ;;
         "dockerhub-tags")
             version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$source_data/tags?page_size=100" | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V -r | head -1)
+            ;;
+        "dockerhub-tags-pattern")
+            local repo="${source_data%%:*}"
+            local pattern="${source_data#*:}"
+            version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$repo/tags?page_size=100" | jq -r '.results[].name' | grep -E "$pattern" | sort -V -r | head -1)
             ;;
         *)
             return 1
@@ -69,11 +73,17 @@ for chart_dir in "$REPO_ROOT"/*/; do
 
     # Fetch and clean latest
     echo "  Source image: $source_type"
-    latest_raw=$(fetch_latest "${source_type%%:*}" "${source_type#*:}")
+    if ! latest_raw=$(fetch_latest "${source_type%%:*}" "${source_type#*:}" 2>&1); then
+        echo "  Error: Unsupported source type '${source_type%%:*}'."
+        ERRORS_FOUND="$ERRORS_FOUND\n- **$chart_name**: unsupported source type '${source_type%%:*}'"
+        continue
+    fi
+
     latest_clean=$(apply_pattern "$latest_raw" "$source_pattern")
 
     if [ -z "$latest_clean" ]; then
         echo "  Error: Could not fetch latest version."
+        ERRORS_FOUND="$ERRORS_FOUND\n- **$chart_name**: could not fetch latest version from $source_type"
         continue
     fi
 
@@ -83,7 +93,7 @@ for chart_dir in "$REPO_ROOT"/*/; do
     if [ "$current_app_version" != "$latest_clean" ]; then
         new_chart_version=$(bump_version "$current_chart_version")
         echo "  🚀 Update found! Bumping to App: $latest_clean | Chart: $new_chart_version"
-        
+
         # Update Chart.yaml
         sed -i.bak \
             -e "s|^appVersion:.*|appVersion: \"$latest_clean\"|" \
@@ -100,7 +110,10 @@ done
 # Output summary for GH Actions
 if [ -n "$UPDATES_FOUND" ]; then
     echo -e "$UPDATES_FOUND" > "$REPO_ROOT/update_summary.txt"
-    exit 0
-else
-    exit 0
 fi
+
+if [ -n "$ERRORS_FOUND" ]; then
+    echo -e "$ERRORS_FOUND" > "$REPO_ROOT/errors_summary.txt"
+fi
+
+exit 0

@@ -38,6 +38,9 @@ spec:
             volumeMounts:
             - name: backup-storage
               mountPath: /backup
+              {{- if .Values.backup.persistence.enabled }}
+              subPath: postgres
+              {{- end }}
           volumes:
           - name: backup-storage
             {{- if .Values.backup.persistence.enabled }}

@@ -122,6 +122,7 @@ spec:
             {{- if .Values.persistence.backups.enabled }}
             - name: backups
               mountPath: /config/backups
+              subPath: homeassistant
             {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

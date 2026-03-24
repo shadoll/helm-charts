@@ -1,0 +1,25 @@
+home-assistant:
+  image:
+    # Must match Chart.yaml appVersion — subchart can't access parent's appVersion
+    tag: "2026.4.0.dev202603240309"
+
+  hostNetwork: false
+
+  homekit:
+    enabled: false
+
+  persistence:
+    config:
+      type: pvc
+      size: 5Gi
+      storageClass: local-path
+    media:
+      enabled: false
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"

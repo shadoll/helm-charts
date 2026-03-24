@@ -25,6 +25,11 @@ fetch_latest() {
             local pattern="${source_data#*:}"
             version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$repo/tags?page_size=100" | jq -r '.results[].name' | grep -E "$pattern" | sort -V -r | head -1)
             ;;
+        "dockerhub-dev")
+            local repo="${source_data%%:*}"
+            local pattern="${source_data#*:}"
+            version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$repo/tags?page_size=100" | jq -r '.results[].name' | grep -E "$pattern" | head -1)
+            ;;
         *)
             return 1
             ;;
@@ -46,10 +51,16 @@ apply_pattern() {
 # Bump semver patch version (0.1.9 -> 0.1.10)
 bump_version() {
     local version=$1
+    # Extract optional suffix (e.g., -dev, -beta)
+    local suffix=""
+    if [[ "$version" == *-* ]]; then
+        suffix="-${version#*-}"
+        version="${version%%-*}"
+    fi
     local major minor patch
     IFS='.' read -r major minor patch <<< "$version"
     patch=$((patch + 1))
-    echo "$major.$minor.$patch"
+    echo "$major.$minor.$patch$suffix"
 }
 
 # Main loop through charts
@@ -100,6 +111,16 @@ for chart_dir in "$REPO_ROOT"/*/; do
             -e "s|^version:.*|version: $new_chart_version|" \
             "$chart_yaml"
         rm -f "$chart_yaml.bak"
+
+        # Update image.tag in values.yaml if it has a non-empty tag (for wrapper charts)
+        values_yaml="$chart_dir/values.yaml"
+        if [ -f "$values_yaml" ] && grep -qE 'tag: ".+"' "$values_yaml"; then
+            sed -i.bak \
+                -e 's|tag: "[^"][^"]*"|tag: "'"$latest_clean"'"|' \
+                "$values_yaml"
+            rm -f "$values_yaml.bak"
+            echo "  Updated values.yaml image.tag"
+        fi
 
         UPDATES_FOUND="$UPDATES_FOUND\n- **$chart_name**: $current_app_version ➔ $latest_clean (Chart v$new_chart_version)"
     else

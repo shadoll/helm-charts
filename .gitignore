@@ -17,6 +17,8 @@ Icon
 charts/*.tgz
 charts/*/charts/
 charts/*/tmpcharts/
+**/charts/*.tgz
+**/Chart.lock
 
 # IDE files
 .vscode/

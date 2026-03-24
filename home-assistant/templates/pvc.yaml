@@ -46,4 +46,54 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+---
+{{- if .Values.persistence.backups.enabled }}
+{{- if eq (.Values.persistence.backups.type | default "pvc") "pvc" }}
+{{- if not .Values.persistence.backups.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "home-assistant.fullname" . }}-backups
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "home-assistant.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml (.Values.persistence.backups.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.backups.size | default "10Gi" | quote }}
+  {{- if .Values.persistence.backups.storageClass }}
+  storageClassName: {{ .Values.persistence.backups.storageClass | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+---
+{{- if .Values.backup.enabled }}
+{{- if .Values.backup.persistence.enabled }}
+{{- if not .Values.backup.persistence.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "home-assistant.fullname" . }}-db-backup
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "home-assistant.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml (.Values.backup.persistence.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.backup.persistence.size | default "10Gi" | quote }}
+  {{- if .Values.backup.persistence.storageClass }}
+  storageClassName: {{ .Values.backup.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

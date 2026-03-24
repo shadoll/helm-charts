@@ -119,6 +119,10 @@ spec:
             - name: media
               mountPath: {{ .Values.persistence.media.mountPath }}
             {{- end }}
+            {{- if .Values.persistence.backups.enabled }}
+            - name: backups
+              mountPath: /config/backups
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -143,6 +147,11 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.persistence.media.existingClaim | default (printf "%s-media" (include "home-assistant.fullname" .)) }}
           {{- end }}
+        {{- end }}
+        {{- if .Values.persistence.backups.enabled }}
+        - name: backups
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.backups.existingClaim | default (printf "%s-backups" (include "home-assistant.fullname" .)) }}
         {{- end }}
         {{- if .Values.haSecrets.enabled }}
         - name: ha-secrets

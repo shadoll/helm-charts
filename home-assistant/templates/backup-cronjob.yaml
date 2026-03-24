@@ -40,9 +40,14 @@ spec:
               mountPath: /backup
           volumes:
           - name: backup-storage
+            {{- if .Values.backup.persistence.enabled }}
+            persistentVolumeClaim:
+              claimName: {{ .Values.backup.persistence.existingClaim | default (printf "%s-db-backup" (include "home-assistant.fullname" .)) }}
+            {{- else }}
             hostPath:
               path: {{ .Values.backup.storagePath }}
               type: DirectoryOrCreate
+            {{- end }}
           restartPolicy: OnFailure
           {{- if .Values.backup.node }}
           affinity:

@@ -48,17 +48,29 @@ resources:
 persistence:
   config:
     enabled: true
-    type: hostPath
-    hostPath: /srv/data/home-assistant/config
+    type: pvc
     mountPath: /config
     size: 10Gi
     accessModes:
       - ReadWriteOnce
     storageClass: ""
+    # hostPath: /srv/data/home-assistant/config  # only when type: hostPath
   media:
     enabled: true
-    hostPath: /srv/data/home-assistant/media
+    type: pvc
     mountPath: /media
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
+    # hostPath: /srv/data/home-assistant/media  # only when type: hostPath
+  backups:
+    enabled: false
+    type: pvc
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
 
 haSecrets:
   enabled: false
@@ -97,6 +109,12 @@ backup:
   storagePath: /storage/backups/postgres
   # Node to run backup on (hostname). Overrides global affinity/tolerations.
   node: ""
+  persistence:
+    enabled: false
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
   postgres:
     host: postgres-tcp.postgres.svc.cluster.local
     db: homeassistant

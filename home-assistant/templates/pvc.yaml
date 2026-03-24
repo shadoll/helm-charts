@@ -21,4 +21,29 @@ spec:
   {{- end }}
 {{- end }}
 {{- end }}
+---
+{{- if .Values.persistence.media.enabled }}
+{{- if eq (.Values.persistence.media.type | default "hostPath") "pvc" }}
+{{- if not .Values.persistence.media.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "home-assistant.fullname" . }}-media
+  {{- if .Values.namespaceOverride }}
+  namespace: {{ .Values.namespaceOverride }}
+  {{- end }}
+  labels:
+    {{- include "home-assistant.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml (.Values.persistence.media.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.media.size | default "5Gi" | quote }}
+  {{- if .Values.persistence.media.storageClass }}
+  storageClassName: {{ .Values.persistence.media.storageClass | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

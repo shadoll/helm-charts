@@ -135,9 +135,14 @@ spec:
         {{- end }}
         {{- if .Values.persistence.media.enabled }}
         - name: media
+          {{- if eq (.Values.persistence.media.type | default "hostPath") "hostPath" }}
           hostPath:
             path: {{ .Values.persistence.media.hostPath }}
             type: DirectoryOrCreate
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.media.existingClaim | default (printf "%s-media" (include "home-assistant.fullname" .)) }}
+          {{- end }}
         {{- end }}
         {{- if .Values.haSecrets.enabled }}
         - name: ha-secrets

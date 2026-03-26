@@ -1,0 +1,33 @@
+# Default values for AdGuard Home Helm Chart
+image:
+  repository: adguard/adguardhome
+  pullPolicy: Always
+
+timezone: "Europe/Kyiv"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+volumes:
+  work:
+    hostPath: ""
+  conf:
+    hostPath: ""
+
+dns:
+  enabled: true
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+
+ingresses: {}
+  # https:
+  #   host: agh.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - agh.example.com

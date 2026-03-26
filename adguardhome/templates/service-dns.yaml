@@ -1,0 +1,25 @@
+{{- if .Values.dns.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-dns
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.dns.type }}
+  {{- if eq .Values.dns.type "LoadBalancer" }}
+  externalTrafficPolicy: {{ .Values.dns.externalTrafficPolicy }}
+  {{- end }}
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+{{- end }}

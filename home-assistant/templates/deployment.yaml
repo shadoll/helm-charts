@@ -34,24 +34,35 @@ spec:
             - |
               # Clean up old log files from PVC
               rm -f /config/home-assistant.log /config/home-assistant.log.1
+              # Fix any corrupted \!include lines in configuration.yaml
+              if [ -f /config/configuration.yaml ]; then
+                sed -i 's/\\!/!/g' /config/configuration.yaml
+              fi
           volumeMounts:
             - name: config
               mountPath: /config
         {{- if .Values.http.enabled }}
         - name: init-http
           image: busybox:latest
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           command:
             - /bin/sh
             - -c
             - |
-              # Build http.yaml — auto-detect pod/service CIDRs from environment
-              POD_CIDR=$(echo $KUBERNETES_SERVICE_HOST | sed 's/\.[0-9]*$/\.0\/16/')
+              # Auto-detect pod and service CIDRs
+              SVC_CIDR=$(echo $KUBERNETES_SERVICE_HOST | sed 's/\.[0-9]*$/\.0\/16/')
+              POD_CIDR=$(echo $POD_IP | sed 's/\.[0-9]*$/\.0\/16/')
               cat > /config/http.yaml << EOF
               server_port: {{ .Values.http.server_port }}
               ip_ban_enabled: {{ .Values.http.ip_ban_enabled }}
               login_attempts_threshold: {{ .Values.http.login_attempts_threshold }}
               use_x_forwarded_for: true
               trusted_proxies:
+                - ${SVC_CIDR}
                 - ${POD_CIDR}
                 - 127.0.0.1
                 - "::1"

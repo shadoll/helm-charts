@@ -72,6 +72,14 @@ persistence:
       - ReadWriteOnce
     storageClass: ""
 
+http:
+  enabled: false
+  server_port: 8123
+  ip_ban_enabled: false
+  login_attempts_threshold: 5
+  # Pod/service CIDRs and localhost are auto-detected; add extra entries here
+  extra_trusted_proxies: []
+
 haSecrets:
   enabled: false
   # K8s Secret containing key-value pairs to write as /config/secrets.yaml

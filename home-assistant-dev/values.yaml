@@ -5,6 +5,9 @@ home-assistant:
 
   hostNetwork: false
 
+  http:
+    enabled: true
+
   homekit:
     enabled: false
 

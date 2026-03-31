@@ -1,0 +1,9 @@
+apiVersion: v2
+name: signal-gateway
+description: Signal Gateway Helm chart
+type: application
+version: 0.1.0
+appVersion: "0.98"
+annotations:
+  version-source: github-release:bbernhard/signal-cli-rest-api
+  version-pattern: "s|^v||"

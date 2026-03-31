@@ -1,0 +1,31 @@
+# Default values for Signal Gateway Helm Chart
+image:
+  repository: bbernhard/signal-cli-rest-api
+  pullPolicy: Always
+
+port: 8080
+
+env:
+  MODE: "json-rpc"
+  SIGNAL_CLI_UID: "1001"
+  SIGNAL_CLI_GID: "1001"
+  SWAGGER_HOST: "signal.hc.lan"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "1"
+    memory: "512Mi"
+
+volume:
+  hostPath: ""
+
+ingresses: {}
+  # https:
+  #   host: signal.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - signal.example.com

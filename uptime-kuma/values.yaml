@@ -1,0 +1,49 @@
+# Default values for Uptime Kuma Helm Chart
+image:
+  repository: louislam/uptime-kuma
+  pullPolicy: IfNotPresent
+
+port: 3001
+
+database:
+  type: mariadb
+  host: mysql.mysql.svc.cluster.local
+  port: "3306"
+  existingSecret: ""
+  secretKeys:
+    dbName: db-name
+    dbUsername: db-username
+    dbPassword: db-password
+
+dockerSocket:
+  enabled: true
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 5Gi
+
+backup:
+  enabled: false
+  schedule: "0 3 * * *"
+  image: mysql:9.0
+  retentionDays: 7
+  storagePath: /storage/backups/mysql
+  # Node to run backup on (hostname)
+  node: ""
+
+ingresses: {}
+  # https:
+  #   host: kuma.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - kuma.example.com

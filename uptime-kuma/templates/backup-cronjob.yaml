@@ -1,0 +1,57 @@
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-backup
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mysql-backup
+            image: {{ .Values.backup.image }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              mysqldump -h {{ .Values.database.host }} -P {{ .Values.database.port }} -u $DB_USERNAME -p$DB_PASSWORD $DB_NAME | gzip > /backup/$DB_NAME-$(date +%Y%m%d-%H%M%S).sql.gz
+              find /backup -name "$DB_NAME-*.sql.gz" -mtime +{{ .Values.backup.retentionDays }} -delete
+            env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.secretKeys.dbName }}
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.secretKeys.dbUsername }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.secretKeys.dbPassword }}
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          volumes:
+          - name: backup-storage
+            hostPath:
+              path: {{ .Values.backup.storagePath }}
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure
+          {{- if .Values.backup.node }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                    - {{ .Values.backup.node }}
+          {{- end }}
+{{- end }}

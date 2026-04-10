@@ -130,6 +130,15 @@ backup:
     existingSecret: ""
     secretKey: password
 
+pvcBackup:
+  enabled: false
+  schedule: "0 3 * * *"
+  image: busybox:latest
+  retentionDays: 7
+  storagePath: /storage/backups/pvc
+  # Node to run backup on (hostname). Overrides global affinity/tolerations.
+  node: ""
+
 nodeSelector: {}
 
 tolerations: []

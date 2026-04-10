@@ -16,7 +16,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              mysqldump -h {{ .Values.database.host }} -P {{ .Values.database.port }} -u $DB_USERNAME -p$DB_PASSWORD $DB_NAME | gzip > /backup/$DB_NAME-$(date +%Y%m%d-%H%M%S).sql.gz
+              mysqldump -h {{ .Values.database.host }} -P {{ .Values.database.port }} -u $DB_USERNAME -p$DB_PASSWORD --single-transaction --set-gtid-purged=OFF --no-tablespaces $DB_NAME | gzip > /backup/$DB_NAME-$(date +%Y%m%d-%H%M%S).sql.gz
               find /backup -name "$DB_NAME-*.sql.gz" -mtime +{{ .Values.backup.retentionDays }} -delete
             env:
             - name: DB_NAME

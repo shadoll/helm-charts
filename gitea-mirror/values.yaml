@@ -1,0 +1,38 @@
+# Default values for Gitea Mirror Helm Chart
+image:
+  repository: ghcr.io/raylabshq/gitea-mirror
+  pullPolicy: IfNotPresent
+
+port: 4321
+
+env:
+  NODE_ENV: "production"
+  HOST: "0.0.0.0"
+  DATABASE_URL: "file:data/gitea-mirror.db"
+  ALLOW_REGISTRATION: "true"
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: BETTER_AUTH_SECRET
+  #   secretKey: BETTER_AUTH_SECRET
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 5Gi
+
+ingresses: {}
+  # https:
+  #   host: mirror.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - mirror.example.com

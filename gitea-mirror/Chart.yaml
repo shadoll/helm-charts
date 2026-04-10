@@ -1,0 +1,9 @@
+apiVersion: v2
+name: gitea-mirror
+description: Gitea Mirror Helm chart
+type: application
+version: 0.1.0
+appVersion: "3.12.5"
+annotations:
+  version-source: github-release:RayLabsHQ/gitea-mirror
+  version-pattern: "s|^v||"

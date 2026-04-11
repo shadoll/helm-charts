@@ -1,0 +1,34 @@
+# Default values for qBittorrent Helm Chart
+image:
+  repository: lscr.io/linuxserver/qbittorrent
+  pullPolicy: IfNotPresent
+
+webuiPort: 8080
+torrentPort: 6881
+
+env:
+  PUID: "1001"
+  PGID: "1001"
+  TZ: "Europe/Kyiv"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "2Gi"
+
+volumes:
+  config:
+    hostPath: ""
+  downloads:
+    hostPath: ""
+
+ingresses: {}
+  # https:
+  #   host: dl.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - dl.example.com

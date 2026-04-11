@@ -30,6 +30,16 @@ fetch_latest() {
             local pattern="${source_data#*:}"
             version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$repo/tags?page_size=100" | jq -r '.results[].name' | grep -E "$pattern" | head -1)
             ;;
+        "ghcr-tags")
+            local repo="${source_data%%:*}"
+            local pattern="${source_data#*:}"
+            [ "$pattern" = "$source_data" ] && pattern='^v?[0-9]+\.[0-9]+\.[0-9]+$'
+            local token
+            token=$(curl -s "https://ghcr.io/token?scope=repository:${repo}:pull" | jq -r '.token // empty')
+            if [ -n "$token" ]; then
+                version=$(curl -s -H "Authorization: Bearer $token" "https://ghcr.io/v2/${repo}/tags/list" | jq -r '.tags[]' | grep -E "$pattern" | sort -V -r | head -1)
+            fi
+            ;;
         *)
             return 1
             ;;

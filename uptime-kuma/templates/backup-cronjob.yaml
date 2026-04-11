@@ -4,6 +4,8 @@ kind: CronJob
 metadata:
   name: {{ .Release.Name }}-backup
 spec:
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   schedule: {{ .Values.backup.schedule | quote }}
   jobTemplate:
     spec:

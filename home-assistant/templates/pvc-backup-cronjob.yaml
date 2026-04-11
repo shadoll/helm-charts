@@ -9,6 +9,8 @@ metadata:
   labels:
     {{- include "home-assistant.labels" . | nindent 4 }}
 spec:
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   schedule: {{ .Values.pvcBackup.schedule | quote }}
   jobTemplate:
     spec:

@@ -3,7 +3,7 @@ name: jellyfin
 description: A Helm chart for Jellyfin media server with Postgres support
 type: application
 annotations:
-  version-source: github-release:jellyfin/jellyfin
+  version-source: ghcr-tags:rogly-net/jellyfin-postgresql:^v[0-9]+\.[0-9]+\.[0-9]+$
   version-pattern: "s|^v||"
-version: 0.1.16
-appVersion: "10.11.8"
+version: 0.1.17
+appVersion: "10.11.6"

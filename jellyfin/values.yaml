@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/rogly-net/jellyfin-postgresql
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "10.11.8"
+  tag: "v10.11.6"
 
 nameOverride: ""
 fullnameOverride: ""

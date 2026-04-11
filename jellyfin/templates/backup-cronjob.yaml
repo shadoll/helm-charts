@@ -9,6 +9,8 @@ metadata:
   labels:
     {{- include "jellyfin.labels" . | nindent 4 }}
 spec:
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   schedule: {{ .Values.backup.schedule | quote }}
   jobTemplate:
     spec:

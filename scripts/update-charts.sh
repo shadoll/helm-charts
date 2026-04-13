@@ -37,7 +37,7 @@ fetch_latest() {
             local token
             token=$(curl -s "https://ghcr.io/token?scope=repository:${repo}:pull" | jq -r '.token // empty')
             if [ -n "$token" ]; then
-                version=$(curl -s -H "Authorization: Bearer $token" "https://ghcr.io/v2/${repo}/tags/list" | jq -r '.tags[]' | grep -E "$pattern" | sort -V -r | head -1)
+                version=$(curl -s -H "Authorization: Bearer $token" "https://ghcr.io/v2/${repo}/tags/list?n=10000" | jq -r '.tags[]' | grep -E "$pattern" | sort -V -r | head -1)
             fi
             ;;
         *)

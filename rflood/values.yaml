@@ -1,0 +1,42 @@
+# Default values for rflood Helm Chart (hotio/rflood)
+image:
+  repository: ghcr.io/hotio/rflood
+  pullPolicy: IfNotPresent
+
+webuiPort: 3000
+rpcPort: 5000
+torrentPort: 50000
+
+env:
+  PUID: "1001"
+  PGID: "1001"
+  UMASK: "002"
+  TZ: "Europe/Kyiv"
+  FLOOD_AUTH: "false"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "2Gi"
+
+persistence:
+  config:
+    size: 2Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+volumes:
+  data:
+    hostPath: ""
+
+ingresses: {}
+  # https:
+  #   host: rflood.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - rflood.example.com

@@ -109,9 +109,20 @@ spec:
             - /bin/sh
             - -c
             - |
+              # URL-encode password so special chars (/, @, :, #, ?, %, &, +) don't break the db_url
+              ENCODED_PW=$(printf '%s' "$HA_POSTGRESQL_PASSWORD" | sed \
+                -e 's|%|%25|g' \
+                -e 's|/|%2F|g' \
+                -e 's|@|%40|g' \
+                -e 's|:|%3A|g' \
+                -e 's|#|%23|g' \
+                -e 's|?|%3F|g' \
+                -e 's|&|%26|g' \
+                -e 's|+|%2B|g' \
+                -e 's| |%20|g')
               # Build recorder.yaml with postgres connection string
               printf '%s\n' \
-                "db_url: \"postgresql://{{ .Values.postgres.user }}:${HA_POSTGRESQL_PASSWORD}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.db }}\"" \
+                "db_url: \"postgresql://{{ .Values.postgres.user }}:${ENCODED_PW}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.db }}\"" \
                 "db_retry_wait: 15" \
                 "auto_purge: true" \
                 "purge_keep_days: {{ .Values.postgres.purgeKeepDays | default 30 }}" \

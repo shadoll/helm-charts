@@ -1,0 +1,35 @@
+image:
+  repository: ghcr.io/homeassistant-ai/ha-mcp
+  pullPolicy: IfNotPresent
+
+command: ["ha-mcp-web"]
+
+port: 8086
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: HOMEASSISTANT_URL
+  #   secretKey: HOMEASSISTANT_URL
+  # - envName: HOMEASSISTANT_TOKEN
+  #   secretKey: HOMEASSISTANT_TOKEN
+
+env: {}
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+ingresses: {}
+  # https:
+  #   host: ha.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - ha.mcp.example.com
+  # lan:
+  #   host: ha.mcp.lan
+  #   annotations: {}

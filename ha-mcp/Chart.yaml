@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ha-mcp
+description: Home Assistant MCP server Helm chart
+type: application
+version: 0.1.0
+appVersion: "7.1.0"
+annotations:
+  version-source: github-release:homeassistant-ai/ha-mcp
+  version-pattern: "s|^v||"

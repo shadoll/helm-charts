@@ -2,8 +2,8 @@ apiVersion: v2
 name: adguardhome
 description: AdGuard Home DNS server Helm chart
 type: application
-version: 0.1.0
-appVersion: "0.107.73"
+version: 0.1.1
+appVersion: "0.107.74"
 annotations:
   version-source: github-release:AdguardTeam/AdGuardHome
   version-pattern: "s|^v||"

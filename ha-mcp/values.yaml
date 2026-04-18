@@ -23,6 +23,10 @@ resources:
     cpu: "500m"
     memory: "512Mi"
 
+nodeSelector: {}
+
+tolerations: []
+
 ingresses: {}
   # https:
   #   host: ha.mcp.example.com

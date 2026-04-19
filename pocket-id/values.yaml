@@ -1,0 +1,83 @@
+# Default values for Pocket ID Helm Chart
+image:
+  repository: ghcr.io/pocket-id/pocket-id
+  pullPolicy: IfNotPresent
+
+port: 1411
+
+# Service port exposed inside the cluster
+servicePort: 80
+
+env: {}
+  # APP_URL: "https://id.example.com"
+  # TRUST_PROXY: "true"
+
+# Reference an existing Kubernetes Secret for envFrom
+existingSecret: ""
+
+secretEnvKeys: []
+  # - envName: DB_CONNECTION_STRING
+  #   secretKey: DB_CONNECTION_STRING
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+persistence:
+  enabled: true
+  # When set, chart uses an existing PVC and does NOT create one
+  existingClaim: ""
+  storageClass: local-path
+  size: 5Gi
+
+ingresses: {}
+  # https:
+  #   host: id.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - id.example.com
+
+# One-shot Job that ensures DB user/database exist in an external Postgres.
+# Runs as a Helm post-install hook. Idempotent.
+dbInit:
+  enabled: false
+  host: postgres-tcp.postgres.svc.cluster.local
+  port: 5432
+  adminUser: postgres
+  database: pocket_id
+  user: pocket_id
+  # References keys on existingSecret
+  adminPasswordSecretKey: POSTGRES_ADMIN_PASSWORD
+  userPasswordSecretKey: POCKET_ID_DB_PASSWORD
+  image: postgres:16-alpine
+
+backup:
+  db:
+    enabled: false
+    schedule: "0 4 * * *"
+    retentionDays: 7
+    image: postgres:16-alpine
+    host: postgres-tcp.postgres.svc.cluster.local
+    user: pocket_id
+    database: pocket_id
+    passwordSecretKey: POCKET_ID_DB_PASSWORD
+    hostPath: /srv/backups/postgres
+    filePrefix: pocket_id
+  pvc:
+    enabled: false
+    schedule: "30 4 * * *"
+    retentionDays: 7
+    image: busybox:latest
+    hostPath: /srv/backups/pvc
+    filePrefix: pocket-id-data
+    # Pin the backup pod to the same node as the PVC owner (required for RWO local-path)
+    nodeSelector: {}

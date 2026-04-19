@@ -1,0 +1,59 @@
+{{- if .Values.backup.pvc.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-pvc-backup
+spec:
+  schedule: {{ .Values.backup.pvc.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.backup.pvc.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: tar-backup
+              image: {{ .Values.backup.pvc.image }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  mkdir -p /backup
+                  TS=$(date +%Y%m%d-%H%M%S)
+                  tar czf /backup/${FILE_PREFIX}-${TS}.tar.gz -C /data .
+                  find /backup -name "${FILE_PREFIX}-*.tar.gz" -mtime +$RETENTION_DAYS -delete
+              env:
+                - name: FILE_PREFIX
+                  value: {{ .Values.backup.pvc.filePrefix | quote }}
+                - name: RETENTION_DAYS
+                  value: {{ .Values.backup.pvc.retentionDays | quote }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                  readOnly: true
+                - name: backup-storage
+                  mountPath: /backup
+              resources:
+                requests:
+                  memory: "32Mi"
+                  cpu: "50m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "500m"
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ include "pocket-id.pvcName" . }}
+                readOnly: true
+            - name: backup-storage
+              hostPath:
+                path: {{ .Values.backup.pvc.hostPath }}
+                type: DirectoryOrCreate
+{{- end }}

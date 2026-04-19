@@ -1,0 +1,61 @@
+image:
+  repository: binwiederhier/ntfy
+  pullPolicy: IfNotPresent
+
+args: ["serve"]
+
+port: 80
+servicePort: 80
+
+env: {}
+  # TZ: "Europe/Kyiv"
+  # NTFY_BASE_URL: "https://ntfy.example.com"
+  # NTFY_UPSTREAM_BASE_URL: "https://ntfy.sh"
+
+existingSecret: ""
+secretEnvKeys: []
+
+# Inline ntfy server config rendered into a ConfigMap at /etc/ntfy/server.yml.
+# Leave empty and set `existingConfigMap` to supply config via an external (e.g. sealed) ConfigMap.
+config: ""
+  # |
+  # base-url: "https://ntfy.example.com"
+  # upstream-base-url: "https://ntfy.sh"
+  # behind-proxy: true
+  # cache-file: "/var/cache/ntfy/cache.db"
+  # attachment-cache-dir: "/var/cache/ntfy/attachments"
+  # web-push-public-key: ...
+  # web-push-private-key: ...
+  # web-push-file: "/var/cache/ntfy/webpush.db"
+  # web-push-email-address: admin@example.com
+  # enable-metrics: true
+
+existingConfigMap: ""
+
+resources:
+  requests:
+    cpu: "150m"
+    memory: "150Mi"
+  limits:
+    cpu: "200m"
+    memory: "300Mi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: ntfy.example.com
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+  #     traefik.ingress.kubernetes.io/router.tls: "true"
+  #     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  #   tls:
+  #     - hosts:
+  #         - ntfy.example.com
+  #       secretName: ntfy-tls
+  # lan:
+  #   host: ntfy.lan
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.entrypoints: web

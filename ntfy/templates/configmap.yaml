@@ -1,0 +1,12 @@
+{{- if and .Values.config (not .Values.existingConfigMap) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  server.yml: |
+    {{- .Values.config | nindent 4 }}
+{{- end }}

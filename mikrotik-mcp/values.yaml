@@ -1,0 +1,46 @@
+image:
+  # Uses python:3.11-alpine as base; mcp-server-mikrotik is installed
+  # from PyPI at container startup using the version from Chart.appVersion.
+  repository: python
+  tag: "3.11-alpine"
+  pullPolicy: IfNotPresent
+
+port: 8000
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: MIKROTIK_HOST
+  #   secretKey: MIKROTIK_HOST
+  # - envName: MIKROTIK_USERNAME
+  #   secretKey: MIKROTIK_USERNAME
+  # - envName: MIKROTIK_PASSWORD
+  #   secretKey: MIKROTIK_PASSWORD
+
+# Additional environment variables (non-secret)
+env:
+  MIKROTIK_MCP__TRANSPORT: "sse"
+  MIKROTIK_MCP__HOST: "0.0.0.0"
+  MIKROTIK_MCP__PORT: "8000"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: hw5.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - hw5.mcp.example.com
+  # lan:
+  #   host: hw5.mcp.hc.lan
+  #   annotations: {}

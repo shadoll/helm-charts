@@ -2,8 +2,8 @@ apiVersion: v2
 name: ntfy
 description: ntfy push notification server Helm chart
 type: application
-version: 0.1.0
-appVersion: "2.18.0"
+version: 0.1.1
+appVersion: "2.21.0"
 annotations:
   version-source: github-release:binwiederhier/ntfy
   version-pattern: "s|^v||"

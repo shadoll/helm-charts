@@ -33,6 +33,10 @@ volumes:
   data:
     hostPath: ""
 
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
 ingresses: {}
   # https:
   #   host: rflood.example.com

@@ -1,0 +1,69 @@
+image:
+  repository: ghcr.io/italypaleale/traefik-forward-auth
+  pullPolicy: IfNotPresent
+  # Overrides the image tag; defaults to Chart.AppVersion
+  tag: ""
+
+# TFA server hostname (used for OIDC redirects). E.g. "auth.example.com"
+hostname: ""
+
+# Cookie domain — scope at which the session cookie is valid.
+# Must be a parent of `hostname` (e.g. "example.com" for "auth.example.com").
+cookieDomain: ""
+
+tokens:
+  sessionLifetime: 24h
+
+# Pocket ID OIDC configuration. `clientID` is a public identifier;
+# `clientSecret` is read from `existingSecret` (key: `client-secret`).
+pocketID:
+  endpoint: ""
+  clientID: ""
+
+# Secret containing the client secret. Must define key `client-secret`.
+# Use sealed-secrets to provide this in cluster overlays.
+existingSecret: ""
+
+portal:
+  name: main
+
+# Extra YAML appended to config.yaml (advanced use only).
+extraConfig: ""
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Traefik Middleware of kind forwardAuth. Referenced by apps as
+# <namespace>-<middleware.name>@kubernetescrd.
+middleware:
+  enabled: true
+  name: ""        # defaults to "<release>-auth" if empty
+  authResponseHeaders:
+    - X-Forwarded-User
+    - X-Forwarded-Displayname
+    - X-Forwarded-Groups
+  trustForwardHeader: true
+
+ingresses: {}
+  # https:
+  #   host: auth.example.com
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+  #     traefik.ingress.kubernetes.io/router.tls: "true"
+  #     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  #     traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect-to-https@kubernetescrd
+  #   tls:
+  #     - hosts:
+  #         - auth.example.com

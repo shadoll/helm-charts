@@ -1,0 +1,16 @@
+{{- if .Values.middleware.enabled }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "tfa.middlewareName" . }}
+  labels:
+    {{- include "tfa.labels" . | nindent 4 }}
+spec:
+  forwardAuth:
+    address: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local/portals/{{ .Values.portal.name }}"
+    trustForwardHeader: {{ .Values.middleware.trustForwardHeader }}
+    {{- with .Values.middleware.authResponseHeaders }}
+    authResponseHeaders:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}

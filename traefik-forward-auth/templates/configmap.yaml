@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "tfa.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    server:
+      hostname: {{ .Values.hostname | quote }}
+
+    tokens:
+      sessionLifetime: {{ .Values.tokens.sessionLifetime }}
+
+    cookies:
+      domain: {{ .Values.cookieDomain | quote }}
+
+    portals:
+      - name: {{ .Values.portal.name | quote }}
+        providers:
+          - pocketID:
+              endpoint: {{ .Values.pocketID.endpoint | quote }}
+              clientID: {{ .Values.pocketID.clientID | quote }}
+              clientSecretFile: "/var/run/secrets/traefik-forward-auth/client-secret"
+    {{- with .Values.extraConfig }}
+    {{ . | nindent 4 }}
+    {{- end }}

@@ -39,7 +39,7 @@ spec:
             - sh
             - -c
             - |
-              pip install --quiet --no-cache-dir "mcp-server-mikrotik=={{ .Chart.AppVersion }}"
+              pip install --quiet --no-cache-dir "mcp-server-mikrotik"
               exec mcp-server-mikrotik
           ports:
             - containerPort: {{ .Values.port }}

@@ -1,8 +1,9 @@
 image:
-  # Uses python:3.11-alpine as base; mcp-server-mikrotik is installed
+  # Uses python:3.12-alpine as base; mcp-server-mikrotik is installed
   # from PyPI at container startup using the version from Chart.appVersion.
+  # NOTE: This tag is intentionally pinned to a Python version, not the app version.
   repository: python
-  tag: "0.6.0-9"
+  pythonTag: "3.12-alpine"
   pullPolicy: IfNotPresent
 
 port: 8000

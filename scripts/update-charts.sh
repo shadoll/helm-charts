@@ -112,14 +112,20 @@ for chart_dir in "$REPO_ROOT"/*/; do
 
     # Compare and Update
     if [ "$current_app_version" != "$latest_clean" ]; then
-        new_chart_version=$(bump_version "$current_chart_version")
-        echo "  🚀 Update found! Bumping to App: $latest_clean | Chart: $new_chart_version"
-
-        # Update Chart.yaml
-        sed -i.bak \
-            -e "s|^appVersion:.*|appVersion: \"$latest_clean\"|" \
-            -e "s|^version:.*|version: $new_chart_version|" \
-            "$chart_yaml"
+        bump_chart=$(grep -E '^  version-bump-chart:' "$chart_yaml" | sed 's/.*: *"\?//;s/"\?$//')
+        if [ "$bump_chart" = "false" ]; then
+            echo "  🚀 Update found! Bumping to App: $latest_clean | Chart: $current_chart_version (chart version pinned)"
+            sed -i.bak \
+                -e "s|^appVersion:.*|appVersion: \"$latest_clean\"|"\
+                "$chart_yaml"
+        else
+            new_chart_version=$(bump_version "$current_chart_version")
+            echo "  🚀 Update found! Bumping to App: $latest_clean | Chart: $new_chart_version"
+            sed -i.bak \
+                -e "s|^appVersion:.*|appVersion: \"$latest_clean\"|"\
+                -e "s|^version:.*|version: $new_chart_version|" \
+                "$chart_yaml"
+        fi
         rm -f "$chart_yaml.bak"
 
         # Update image.tag in values.yaml if it has a non-empty tag (for wrapper charts)

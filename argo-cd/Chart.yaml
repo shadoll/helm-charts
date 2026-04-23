@@ -5,8 +5,8 @@ type: application
 version: 0.1.0
 appVersion: "3.3.8"
 annotations:
-  version-source: github-release:argoproj/argo-helm
-  version-pattern: "s|^argo-cd-||"
+  version-source: github-release:argoproj/argo-cd
+  version-pattern: "s|^v||"
 dependencies:
   - name: argo-cd
     version: 9.5.4

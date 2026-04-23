@@ -1,0 +1,5 @@
+# Default values for the argo-cd umbrella chart.
+# All overrides are forwarded to the upstream argoproj/argo-cd chart under the
+# top-level `argo-cd:` key. See https://github.com/argoproj/argo-helm for the
+# full list of configurable values.
+argo-cd: {}

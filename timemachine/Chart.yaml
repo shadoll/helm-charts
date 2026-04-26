@@ -1,0 +1,6 @@
+apiVersion: v2
+name: timemachine
+description: macOS Time Machine backup server (Samba) based on mbentley/timemachine
+type: application
+version: 0.1.0
+appVersion: "smb"

@@ -1,0 +1,78 @@
+# Default values for timemachine.
+# Wraps mbentley/docker-timemachine (https://github.com/mbentley/docker-timemachine).
+
+image:
+  repository: mbentley/timemachine
+  tag: smb
+  pullPolicy: IfNotPresent
+
+# Time Machine / Samba runtime configuration. These map directly to env vars
+# documented in mbentley/docker-timemachine (smb variant).
+timemachine:
+  username: timemachine
+  groupname: timemachine
+  uid: 1000
+  gid: 1000
+  shareName: TimeMachine
+  workgroup: WORKGROUP
+  mimicModel: TimeCapsule8,119
+  # Per-user max backup size in MiB (0 = unlimited).
+  volumeSizeLimit: "0"
+  smbPort: 445
+  setPermissions: "false"
+  hideShares: "no"
+  smbInheritPermissions: "no"
+  smbNfsAces: "no"
+  smbMetadata: "stream"
+  smbVfsObjects: "fruit streams_xattr"
+  debugLevel: "1"
+  advertisedHostname: ""
+  customSmbConf: "false"
+  customUser: "false"
+  externalConf: ""
+
+# Existing Secret with key PASSWORD. Required.
+existingSecret: ""
+passwordKey: PASSWORD
+
+# Backup storage. Default is a hostPath on the target node so the backups
+# land on a mapped host drive/folder.
+persistence:
+  type: hostPath  # hostPath | pvc
+  hostPath: /storage/timemachine
+  hostPathType: DirectoryOrCreate
+  # Used only when type=pvc
+  size: 500Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+
+# Additional non-Time-Machine SMB shares exposed by the same daemon.
+# Each entry mounts hostPath at mountPath inside the container and is
+# advertised as an SMB share via the EXTRA_SHARES env var.
+extraShares: []
+  # - name: backup
+  #   hostPath: /storage/backups
+  #   mountPath: /shares/backup
+  #   hostPathType: DirectoryOrCreate
+
+# hostNetwork is required for macOS Bonjour auto-discovery to reach the pod.
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+service:
+  enabled: true
+  type: ClusterIP
+  smbPort: 445
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 1
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

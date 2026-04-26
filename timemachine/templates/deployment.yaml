@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "timemachine.fullname" . }}
+  labels:
+    {{- include "timemachine.labels" . | nindent 4 }}
+spec:
+  # Always exactly one replica — Time Machine is single-writer.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "timemachine.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "timemachine.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 137
+              name: netbios-ns
+              protocol: UDP
+            - containerPort: 138
+              name: netbios-dgm
+              protocol: UDP
+            - containerPort: 139
+              name: netbios-ssn
+              protocol: TCP
+            - containerPort: {{ .Values.timemachine.smbPort }}
+              name: smb
+              protocol: TCP
+          env:
+            - name: TM_USERNAME
+              value: {{ .Values.timemachine.username | quote }}
+            - name: TM_GROUPNAME
+              value: {{ .Values.timemachine.groupname | quote }}
+            - name: TM_UID
+              value: {{ .Values.timemachine.uid | quote }}
+            - name: TM_GID
+              value: {{ .Values.timemachine.gid | quote }}
+            - name: SHARE_NAME
+              value: {{ .Values.timemachine.shareName | quote }}
+            - name: WORKGROUP
+              value: {{ .Values.timemachine.workgroup | quote }}
+            - name: MIMIC_MODEL
+              value: {{ .Values.timemachine.mimicModel | quote }}
+            - name: VOLUME_SIZE_LIMIT
+              value: {{ .Values.timemachine.volumeSizeLimit | quote }}
+            - name: SMB_PORT
+              value: {{ .Values.timemachine.smbPort | quote }}
+            - name: SET_PERMISSIONS
+              value: {{ .Values.timemachine.setPermissions | quote }}
+            - name: HIDE_SHARES
+              value: {{ .Values.timemachine.hideShares | quote }}
+            - name: SMB_INHERIT_PERMISSIONS
+              value: {{ .Values.timemachine.smbInheritPermissions | quote }}
+            - name: SMB_NFS_ACES
+              value: {{ .Values.timemachine.smbNfsAces | quote }}
+            - name: SMB_METADATA
+              value: {{ .Values.timemachine.smbMetadata | quote }}
+            - name: SMB_VFS_OBJECTS
+              value: {{ .Values.timemachine.smbVfsObjects | quote }}
+            - name: DEBUG_LEVEL
+              value: {{ .Values.timemachine.debugLevel | quote }}
+            - name: ADVERTISED_HOSTNAME
+              value: {{ .Values.timemachine.advertisedHostname | quote }}
+            - name: CUSTOM_SMB_CONF
+              value: {{ .Values.timemachine.customSmbConf | quote }}
+            - name: CUSTOM_USER
+              value: {{ .Values.timemachine.customUser | quote }}
+            - name: EXTERNAL_CONF
+              value: {{ .Values.timemachine.externalConf | quote }}
+            {{- if .Values.extraShares }}
+            - name: EXTRA_SHARES
+              value: {{ include "timemachine.extraShares" . | quote }}
+            {{- end }}
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "existingSecret is required (must contain the PASSWORD key)" .Values.existingSecret }}
+                  key: {{ .Values.passwordKey }}
+          volumeMounts:
+            - name: tm
+              mountPath: /opt/timemachine
+            - name: run-samba
+              mountPath: /run/samba
+            {{- range .Values.extraShares }}
+            - name: extra-{{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tm
+          {{- if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath }}
+            type: {{ .Values.persistence.hostPathType }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ include "timemachine.fullname" . }}-data
+          {{- end }}
+        - name: run-samba
+          emptyDir: {}
+        {{- range .Values.extraShares }}
+        - name: extra-{{ .name }}
+          hostPath:
+            path: {{ .hostPath }}
+            type: {{ .hostPathType | default "DirectoryOrCreate" }}
+        {{- end }}

@@ -1,0 +1,29 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "timemachine.fullname" . }}
+  labels:
+    {{- include "timemachine.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "timemachine.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: smb
+      port: {{ .Values.service.smbPort }}
+      targetPort: smb
+      protocol: TCP
+    - name: netbios-ssn
+      port: 139
+      targetPort: netbios-ssn
+      protocol: TCP
+    - name: netbios-ns
+      port: 137
+      targetPort: netbios-ns
+      protocol: UDP
+    - name: netbios-dgm
+      port: 138
+      targetPort: netbios-dgm
+      protocol: UDP
+{{- end }}

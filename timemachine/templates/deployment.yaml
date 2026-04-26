@@ -102,7 +102,7 @@ spec:
                   key: {{ .Values.passwordKey }}
           volumeMounts:
             - name: tm
-              mountPath: /opt/timemachine
+              mountPath: /opt/{{ .Values.timemachine.username }}
             - name: run-samba
               mountPath: /run/samba
             {{- range .Values.extraShares }}

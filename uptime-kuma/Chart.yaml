@@ -2,7 +2,7 @@ apiVersion: v2
 name: uptime-kuma
 description: Uptime Kuma Helm chart
 type: application
-version: 0.1.4
-appVersion: "2.2.1"
+version: 0.1.5
+appVersion: "2.3.0"
 annotations:
   version-source: github-release:louislam/uptime-kuma

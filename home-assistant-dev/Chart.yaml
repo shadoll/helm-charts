@@ -4,8 +4,8 @@ description: Home Assistant development build - wraps home-assistant chart with 
 type: application
 annotations:
   version-source: dockerhub-dev:homeassistant/home-assistant:^[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$
-version: 0.1.47-dev
-appVersion: "2026.6.0.dev202605010317"
+version: 0.1.48-dev
+appVersion: "2026.6.0.dev202605020315"
 dependencies:
   - name: home-assistant
     version: ">=0.1.0"

@@ -7,6 +7,15 @@ webuiPort: 3000
 rpcPort: 5000
 torrentPort: 50000
 
+service:
+  type: ClusterIP
+  externalTrafficPolicy: ""
+  nodePorts:
+    webui: null
+    rpc: null
+    torrentTcp: null
+    torrentUdp: null
+
 env:
   PUID: "1001"
   PGID: "1001"

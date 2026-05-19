@@ -1,0 +1,37 @@
+# Default values for Zigbee2MQTT Helm Chart
+image:
+  repository: ghcr.io/koenkk/zigbee2mqtt
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# Container port exposed by the Zigbee2MQTT frontend
+httpPort: 8080
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+# Persistent /app/data directory (configuration, device database, coordinator backup)
+volume:
+  hostPath: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: zigbee2mqtt.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - zigbee2mqtt.example.com

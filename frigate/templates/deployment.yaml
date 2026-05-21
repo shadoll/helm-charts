@@ -17,9 +17,6 @@ spec:
     metadata:
       labels:
         {{- include "frigate.selectorLabels" . | nindent 8 }}
-      annotations:
-        # Roll the pod when the config ConfigMap changes
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -32,6 +29,27 @@ spec:
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.configSeed.existingConfigMap }}
+      initContainers:
+        - name: seed-config
+          image: "{{ .Values.initImage.repository }}:{{ .Values.initImage.tag }}"
+          imagePullPolicy: {{ .Values.initImage.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              if [ ! -f /config/config.yml ]; then
+                echo "Seeding /config/config.yml from ConfigMap"
+                cp /config-seed/{{ .Values.configSeed.key }} /config/config.yml
+              else
+                echo "/config/config.yml already exists, leaving Frigate's copy alone"
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-seed
+              mountPath: /config-seed
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -61,10 +79,10 @@ spec:
                 name: {{ .Values.existingSecret }}
           {{- end }}
           securityContext:
-            # RK3588 device nodes (/dev/dri, /dev/rga, /dev/mpp_service) are
-            # accessible only to root + video/render groups. Privileged is the
-            # simplest reliable path on k3s; tighten later with explicit
-            # supplementalGroups if you want.
+            # RK3588 device nodes are owned by video/render groups that don't
+            # exist inside the Frigate image. Privileged is the simplest path
+            # on k3s; tighten later with explicit supplementalGroups if you
+            # care.
             privileged: {{ .Values.rockchip.enabled }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -85,9 +103,6 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
           volumeMounts:
-            - name: config-file
-              mountPath: /config/config.yaml
-              subPath: config.yaml
             - name: config
               mountPath: /config
             - name: media
@@ -104,12 +119,6 @@ spec:
             {{- end }}
             {{- end }}
       volumes:
-        - name: config-file
-          configMap:
-            name: {{ .Release.Name }}-config
-            items:
-              - key: config.yaml
-                path: config.yaml
         - name: config
           hostPath:
             path: {{ required "config.hostPath is required" .Values.config.hostPath }}
@@ -126,6 +135,11 @@ spec:
           hostPath:
             path: /etc/localtime
             type: File
+        {{- if .Values.configSeed.existingConfigMap }}
+        - name: config-seed
+          configMap:
+            name: {{ .Values.configSeed.existingConfigMap }}
+        {{- end }}
         {{- if .Values.rockchip.enabled }}
         {{- range .Values.rockchip.devices }}
         - name: {{ . | base | replace "_" "-" }}

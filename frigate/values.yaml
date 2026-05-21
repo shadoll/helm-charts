@@ -4,12 +4,17 @@
 image:
   # Use the -rk variant for Rockchip hardware acceleration
   repository: ghcr.io/blakeblackshear/frigate
-  tag: ""              # defaults to "stable-rk" (see deployment.yaml) when empty
+  tag: ""              # defaults to "<appVersion>-rk" (see deployment.yaml) when empty
+  pullPolicy: IfNotPresent
+
+# Image used by the seed init container (needs `cp` + `sh`)
+initImage:
+  repository: busybox
+  tag: "1.36"
   pullPolicy: IfNotPresent
 
 timezone: "Europe/Kyiv"
 
-# Web UI / RTMP / RTSP ports
 httpPort: 5000
 rtspPort: 8554
 webrtcPort: 8555
@@ -21,7 +26,7 @@ service:
   webrtcPort: 8555
 
 # Frigate needs a large /dev/shm for clip processing.
-# Rough rule of thumb: 40MB per 1080p camera + 10MB overhead.
+# Rough rule of thumb: ~40 MiB per 1080p camera + overhead.
 shmSizeMi: 512
 
 resources:
@@ -32,7 +37,8 @@ resources:
     cpu: "4"
     memory: "4Gi"
 
-# /config persistence (Frigate database, model cache, runtime state)
+# /config persistence (Frigate database, config.yml, model cache, runtime state).
+# Frigate UI edits write here, so this MUST persist across pod restarts.
 config:
   hostPath: ""         # e.g. /srv/data/frigate/config
 
@@ -40,8 +46,17 @@ config:
 media:
   hostPath: ""         # e.g. /srv/data/frigate/media
 
+# Seed config from an existing ConfigMap. The init container copies
+# `<key>` → `/config/config.yml` ONLY if /config/config.yml is missing
+# (cp -n), so Frigate's own edits (UI, live reload) stay authoritative.
+#
+# To re-seed from Git, delete /config/config.yml on the host and restart
+# the pod.
+configSeed:
+  existingConfigMap: ""    # e.g. frigate-config-seed
+  key: config.yml
+
 # Rockchip device passthrough (RK3588).
-# Frigate's rockchip docs require these devices for ffmpeg-rkmpp + RKNPU detector.
 rockchip:
   enabled: true
   devices:
@@ -50,97 +65,13 @@ rockchip:
     - /dev/rga
     - /dev/mpp_service
 
-# Existing Kubernetes Secret with Frigate substitution env vars
-# (every key in this Secret is exposed in the container as an env var; Frigate
-# substitutes ${KEY} tokens in its config from any env var prefixed FRIGATE_).
-# The Secret must define at minimum:
-#   FRIGATE_MQTT_HOST, FRIGATE_MQTT_USER, FRIGATE_MQTT_PASSWORD
-# Plus one user/password pair per camera, e.g.:
-#   FRIGATE_REOLINK_FRONT_USER, FRIGATE_REOLINK_FRONT_PASSWORD
+# Existing Kubernetes Secret whose keys are exposed as env vars on the
+# Frigate container. Frigate substitutes {KEY} tokens in config.yml from
+# any env var prefixed FRIGATE_.
 existingSecret: ""
-
-# Inline frigate config.yaml. Rendered into a ConfigMap and mounted at
-# /config/config.yaml. Everything except secrets (rtsp passwords, mqtt creds)
-# belongs here; secrets are pulled from `existingSecret` via env substitution.
-frigateConfig:
-  mqtt:
-    enabled: true
-    host: "{FRIGATE_MQTT_HOST}"
-    port: 1883
-    user: "{FRIGATE_MQTT_USER}"
-    password: "{FRIGATE_MQTT_PASSWORD}"
-    topic_prefix: frigate
-    client_id: frigate
-
-  # Rockchip NPU detector (RKNPU on RK3588 has 3 cores).
-  detectors:
-    rknn:
-      type: rknn
-      num_cores: 3
-
-  # Detection model. Frigate auto-downloads supported RKNN models into
-  # /config/model_cache/rknn_cache on first start. Override here to use a
-  # custom .rknn placed on the config volume.
-  model:
-    path: /config/model_cache/rknn_cache/yolov9-t-320x320.rknn
-    model_type: yolo-generic
-    width: 320
-    height: 320
-    input_tensor: nhwc
-    input_pixel_format: rgb
-
-  # Hardware-accelerated video decoding via Rockchip MPP.
-  ffmpeg:
-    hwaccel_args: preset-rkmpp
-
-  detect:
-    enabled: true
-    width: 1280
-    height: 720
-    fps: 5
-
-  snapshots:
-    enabled: true
-    bounding_box: true
-    retain:
-      default: 7
-
-  record:
-    enabled: true
-    retain:
-      days: 3
-      mode: motion
-    alerts:
-      retain:
-        days: 14
-        mode: motion
-    detections:
-      retain:
-        days: 10
-        mode: motion
-
-  birdseye:
-    enabled: true
-    mode: motion
-
-  go2rtc:
-    streams: {}
-
-  logger:
-    default: info
-
-  # Cameras. Override / extend in the cluster HelmRelease.
-  # Use ${VAR} tokens for any value sourced from `existingSecret`.
-  cameras: {}
 
 nodeSelector: {}
 tolerations: []
 affinity: {}
 
 ingresses: {}
-  # https:
-  #   host: frigate.example.com
-  #   annotations: {}
-  #   tls:
-  #     - hosts:
-  #         - frigate.example.com

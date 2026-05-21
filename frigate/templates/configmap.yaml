@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "frigate.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+{{ toYaml .Values.frigateConfig | indent 4 }}

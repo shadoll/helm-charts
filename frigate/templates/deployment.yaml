@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "frigate.labels" . | nindent 4 }}
+  annotations:
+    version-source: {{ index .Chart.Annotations "version-source" }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "frigate.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "frigate.selectorLabels" . | nindent 8 }}
+      annotations:
+        # Roll the pod when the config ConfigMap changes
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "%s-rk" (.Chart.AppVersion | toString)) }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort }}
+              protocol: TCP
+            - name: rtsp
+              containerPort: {{ .Values.rtspPort }}
+              protocol: TCP
+            - name: webrtc
+              containerPort: {{ .Values.webrtcPort }}
+              protocol: TCP
+            - name: webrtc-udp
+              containerPort: {{ .Values.webrtcPort }}
+              protocol: UDP
+          env:
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+            - name: LIBVA_DRIVER_NAME
+              value: rkmpp
+          {{- if .Values.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+          {{- end }}
+          securityContext:
+            # RK3588 device nodes (/dev/dri, /dev/rga, /dev/mpp_service) are
+            # accessible only to root + video/render groups. Privileged is the
+            # simplest reliable path on k3s; tighten later with explicit
+            # supplementalGroups if you want.
+            privileged: {{ .Values.rockchip.enabled }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: config-file
+              mountPath: /config/config.yaml
+              subPath: config.yaml
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media/frigate
+            - name: dshm
+              mountPath: /dev/shm
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+            {{- if .Values.rockchip.enabled }}
+            {{- range .Values.rockchip.devices }}
+            - name: {{ . | base | replace "_" "-" }}
+              mountPath: {{ . }}
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: config-file
+          configMap:
+            name: {{ .Release.Name }}-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+        - name: config
+          hostPath:
+            path: {{ required "config.hostPath is required" .Values.config.hostPath }}
+            type: DirectoryOrCreate
+        - name: media
+          hostPath:
+            path: {{ required "media.hostPath is required" .Values.media.hostPath }}
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.shmSizeMi }}Mi
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+            type: File
+        {{- if .Values.rockchip.enabled }}
+        {{- range .Values.rockchip.devices }}
+        - name: {{ . | base | replace "_" "-" }}
+          hostPath:
+            path: {{ . }}
+        {{- end }}
+        {{- end }}

@@ -1,0 +1,146 @@
+# Default values for the Frigate Helm chart
+# Tailored for Orange Pi 5 Plus (Rockchip RK3588): CPU + Mali GPU + RKNPU detector
+
+image:
+  # Use the -rk variant for Rockchip hardware acceleration
+  repository: ghcr.io/blakeblackshear/frigate
+  tag: ""              # defaults to "stable-rk" (see deployment.yaml) when empty
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# Web UI / RTMP / RTSP ports
+httpPort: 5000
+rtspPort: 8554
+webrtcPort: 8555
+
+service:
+  type: ClusterIP
+  httpPort: 5000
+  rtspPort: 8554
+  webrtcPort: 8555
+
+# Frigate needs a large /dev/shm for clip processing.
+# Rough rule of thumb: 40MB per 1080p camera + 10MB overhead.
+shmSizeMi: 512
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "4"
+    memory: "4Gi"
+
+# /config persistence (Frigate database, model cache, runtime state)
+config:
+  hostPath: ""         # e.g. /srv/data/frigate/config
+
+# /media/frigate persistence (recordings + snapshots)
+media:
+  hostPath: ""         # e.g. /srv/data/frigate/media
+
+# Rockchip device passthrough (RK3588).
+# Frigate's rockchip docs require these devices for ffmpeg-rkmpp + RKNPU detector.
+rockchip:
+  enabled: true
+  devices:
+    - /dev/dri
+    - /dev/dma_heap
+    - /dev/rga
+    - /dev/mpp_service
+
+# Existing Kubernetes Secret with Frigate substitution env vars
+# (every key in this Secret is exposed in the container as an env var; Frigate
+# substitutes ${KEY} tokens in its config from any env var prefixed FRIGATE_).
+# The Secret must define at minimum:
+#   FRIGATE_MQTT_HOST, FRIGATE_MQTT_USER, FRIGATE_MQTT_PASSWORD
+# Plus one user/password pair per camera, e.g.:
+#   FRIGATE_REOLINK_FRONT_USER, FRIGATE_REOLINK_FRONT_PASSWORD
+existingSecret: ""
+
+# Inline frigate config.yaml. Rendered into a ConfigMap and mounted at
+# /config/config.yaml. Everything except secrets (rtsp passwords, mqtt creds)
+# belongs here; secrets are pulled from `existingSecret` via env substitution.
+frigateConfig:
+  mqtt:
+    enabled: true
+    host: "{FRIGATE_MQTT_HOST}"
+    port: 1883
+    user: "{FRIGATE_MQTT_USER}"
+    password: "{FRIGATE_MQTT_PASSWORD}"
+    topic_prefix: frigate
+    client_id: frigate
+
+  # Rockchip NPU detector (RKNPU on RK3588 has 3 cores).
+  detectors:
+    rknn:
+      type: rknn
+      num_cores: 3
+
+  # Detection model. Frigate auto-downloads supported RKNN models into
+  # /config/model_cache/rknn_cache on first start. Override here to use a
+  # custom .rknn placed on the config volume.
+  model:
+    path: /config/model_cache/rknn_cache/yolov9-t-320x320.rknn
+    model_type: yolo-generic
+    width: 320
+    height: 320
+    input_tensor: nhwc
+    input_pixel_format: rgb
+
+  # Hardware-accelerated video decoding via Rockchip MPP.
+  ffmpeg:
+    hwaccel_args: preset-rkmpp
+
+  detect:
+    enabled: true
+    width: 1280
+    height: 720
+    fps: 5
+
+  snapshots:
+    enabled: true
+    bounding_box: true
+    retain:
+      default: 7
+
+  record:
+    enabled: true
+    retain:
+      days: 3
+      mode: motion
+    alerts:
+      retain:
+        days: 14
+        mode: motion
+    detections:
+      retain:
+        days: 10
+        mode: motion
+
+  birdseye:
+    enabled: true
+    mode: motion
+
+  go2rtc:
+    streams: {}
+
+  logger:
+    default: info
+
+  # Cameras. Override / extend in the cluster HelmRelease.
+  # Use ${VAR} tokens for any value sourced from `existingSecret`.
+  cameras: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: frigate.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - frigate.example.com

@@ -22,6 +22,7 @@ cd helm-charts
 | [Jellyfin](docs/jellyfin.md) | Media server with PostgreSQL support | Ready |
 | [Home Assistant](docs/home-assistant.md) | Home automation with PostgreSQL recorder and managed secrets | Ready |
 | [ESPHome](docs/esphome.md) | ESPHome dashboard with host network for device discovery | Ready |
+| Frigate | NVR with Rockchip RK3588 hardware acceleration (rkmpp + rknn) | Ready |
 
 ### 3. Usage with FluxCD
 

@@ -1,0 +1,40 @@
+image:
+  repository: ghcr.io/jakekeeys/frigate-mcp
+  pullPolicy: IfNotPresent
+
+command: ["frigate-mcp-web"]
+
+port: 8086
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: FRIGATE_URL
+  #   secretKey: FRIGATE_URL
+
+env: {}
+  # FRIGATE_TIMEOUT: "30"
+  # MCP_HOST: "0.0.0.0"
+  # MCP_PORT: "8086"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: frigate.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - frigate.mcp.example.com
+  # lan:
+  #   host: frigate.mcp.lan
+  #   annotations: {}

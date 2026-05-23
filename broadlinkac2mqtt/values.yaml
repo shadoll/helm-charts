@@ -1,0 +1,79 @@
+# Default values for broadlinkac2mqtt Helm chart
+# Bridge between Broadlink AC units and MQTT
+
+image:
+  repository: ghcr.io/artemvladimirov/broadlinkac2mqtt
+  tag: ""  # defaults to Chart.appVersion if empty
+  pullPolicy: IfNotPresent
+
+# Timezone for the container
+timezone: "Europe/Kyiv"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "64Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+
+# Configuration for the application
+# This will be mounted as /app/config/config.yml inside the container
+config:
+  # Service configuration
+  service:
+    update_interval: 10  # seconds between device polls
+    log_level: "info"    # debug, info, error, disabled
+
+  # MQTT broker configuration
+  mqtt:
+    server: "tcp://mqtt-broker:1883"
+    user: ""
+    password: ""
+    client_id: "broadlinkac2mqtt"
+
+    # Home Assistant MQTT Discovery
+    discovery: true
+    discovery_prefix: "homeassistant"
+
+    # Topic structure
+    topic_prefix: "broadlinkac2mqtt"
+    state_topic: "tele"
+    command_topic: "cmnd"
+    availability_topic: "avty"
+
+    # Optional: TLS/SSL configuration
+    # ca_cert: ""
+    # client_cert: ""
+    # client_key: ""
+
+  # Broadlink AC devices
+  # Each device needs: ip, mac, name, and optionally port and temp_unit
+  devices: []
+    # - ip: "192.168.1.100"
+    #   mac: "AA:BB:CC:DD:EE:FF"
+    #   name: "Living Room AC"
+    #   port: 80
+    #   temp_unit: "C"  # C or F
+    # - ip: "192.168.1.101"
+    #   mac: "11:22:33:44:55:66"
+    #   name: "Bedroom AC"
+    #   port: 80
+    #   temp_unit: "C"
+
+# Alternative: use existing secret for MQTT credentials
+# If set, mqtt.user and mqtt.password from config above will be ignored
+existingSecret: ""
+secretKeys:
+  mqttUser: "MQTT_USER"
+  mqttPassword: "MQTT_PASSWORD"
+
+# Node scheduling
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Ingress configuration (not used by this MQTT-only app, but kept for consistency)
+ingresses: {}

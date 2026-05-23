@@ -1,0 +1,17 @@
+# This service is not used by broadlinkac2mqtt (MQTT-only application)
+# Included for Helm chart consistency only
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: {{ .Release.Name }}
+#   labels:
+#     app.kubernetes.io/name: {{ .Chart.Name }}
+#     app.kubernetes.io/instance: {{ .Release.Name }}
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: {{ .Release.Name }}
+#   ports:
+#     - protocol: TCP
+#       port: 80
+#       targetPort: 80

@@ -2,7 +2,7 @@ apiVersion: v2
 name: frigate
 description: Frigate NVR Helm chart with Rockchip RK3588 hardware acceleration (CPU/GPU/NPU)
 type: application
-version: 0.2.1
+version: 0.2.2
 appVersion: "0.17.1"
 annotations:
   version-source: github-release:blakeblackshear/frigate

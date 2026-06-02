@@ -2,8 +2,8 @@ apiVersion: v2
 name: esphome
 description: ESPHome Helm chart
 type: application
-version: 0.1.12
-appVersion: "2026.5.1"
+version: 0.1.13
+appVersion: "2026.5.2"
 annotations:
   version-source: github-release:esphome/esphome
   version-pattern: "s|^v||"

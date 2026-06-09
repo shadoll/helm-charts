@@ -1,0 +1,45 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "mariadb.fullname" . }}-backup
+  labels:
+    {{- include "mariadb.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mariadb-backup
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  mariadb-dump -h {{ include "mariadb.fullname" . }} -u root -p"$MARIADB_ROOT_PASSWORD" --all-databases \
+                    | gzip > /backup/mariadb-all-$(date +%Y%m%d-%H%M%S).sql.gz
+                  find /backup -name "mariadb-all-*.sql.gz" -mtime +$RETENTION_DAYS -delete
+              env:
+                - name: MARIADB_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.auth.existingSecret }}
+                      key: {{ .Values.auth.rootPasswordKey }}
+                - name: RETENTION_DAYS
+                  value: {{ .Values.backup.retentionDays | quote }}
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backup
+          volumes:
+            - name: backup-storage
+              hostPath:
+                path: {{ .Values.backup.hostPath }}
+                type: DirectoryOrCreate
+          {{- if .Values.backup.node }}
+          nodeSelector:
+            kubernetes.io/hostname: {{ .Values.backup.node }}
+          {{- end }}
+          restartPolicy: OnFailure
+{{- end }}

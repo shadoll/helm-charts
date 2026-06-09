@@ -1,0 +1,8 @@
+apiVersion: v2
+name: mariadb
+description: A Helm chart for MariaDB
+type: application
+annotations:
+  version-source: dockerhub-tags:library/mariadb
+version: 0.1.0
+appVersion: "11.4.5"

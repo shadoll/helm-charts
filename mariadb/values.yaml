@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  repository: mariadb
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to Chart.AppVersion
+
+nameOverride: ""
+fullnameOverride: ""
+
+auth:
+  database: mydatabase
+  username: ""
+  existingSecret: ""
+  rootPasswordKey: mariadb-root-password
+  passwordKey: mariadb-password
+
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  size: 5Gi
+
+service:
+  type: ClusterIP
+  port: 3306
+  nodePort: ""
+
+backup:
+  enabled: false
+  schedule: "0 5 * * *"
+  retentionDays: 7
+  hostPath: /storage/sdb/backups/mariadb
+  node: ""
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+nodeSelector: {}
+affinity: {}
+tolerations: []

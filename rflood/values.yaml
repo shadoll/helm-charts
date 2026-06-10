@@ -29,7 +29,19 @@ resources:
     memory: "256Mi"
   limits:
     cpu: "2"
-    memory: "2Gi"
+    memory: "4Gi"
+
+livenessProbe:
+  enabled: true
+  exec:
+    command:
+      - /bin/sh
+      - -c
+      - "timeout 10 rtxmlrpc system.time_seconds > /dev/null 2>&1"
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 15
+  failureThreshold: 3
 
 persistence:
   config:

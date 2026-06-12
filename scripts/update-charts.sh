@@ -17,6 +17,14 @@ fetch_latest() {
         "github-release")
             version=$(curl -sL "https://api.github.com/repos/$source_data/releases/latest" | jq -r '.tag_name // empty')
             ;;
+        "github-sha")
+            local repo="${source_data%%:*}"
+            local branch="${source_data#*:}"
+            if [ "$branch" = "$source_data" ]; then
+                branch=$(curl -sL "https://api.github.com/repos/$repo" | jq -r '.default_branch // "main"')
+            fi
+            version=$(curl -sL "https://api.github.com/repos/$repo/commits/$branch" | jq -r '.sha // empty' | cut -c1-7)
+            ;;
         "dockerhub-tags")
             version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$source_data/tags?page_size=100" | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V -r | head -1)
             ;;

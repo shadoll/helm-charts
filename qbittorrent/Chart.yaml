@@ -2,7 +2,7 @@ apiVersion: v2
 name: qbittorrent
 description: qBittorrent Helm chart
 type: application
-version: 0.1.11
-appVersion: "5.2.1_v2.0.13-ls460"
+version: 0.1.12
+appVersion: "5.2.1_v2.0.13-ls461"
 annotations:
   version-source: github-release:linuxserver/docker-qbittorrent

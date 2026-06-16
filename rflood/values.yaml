@@ -19,7 +19,11 @@ securityContext:
   runAsGroup: 1001
   fsGroup: 1001
 
-env: {}
+rtorrentSocket: /config/rtorrent.sock
+floodNoAuth: true
+
+env:
+  HOME: /config
 
 resources:
   requests:

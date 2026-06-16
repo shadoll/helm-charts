@@ -7,7 +7,7 @@ data:
   rtorrent.rc: |
     session.path.set = /config/session/
     directory.default.set = /data
-    network.scgi.open_local = /config/rtorrent.sock
+    network.scgi.open_local = {{ .Values.rtorrentSocket }}
     network.port_range.set = {{ .Values.torrentPort }}-{{ .Values.torrentPort }}
     network.port_random.set = no
     network.max_open_files.set = 600

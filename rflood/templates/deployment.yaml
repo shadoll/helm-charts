@@ -41,13 +41,20 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.env }}
+          command: ["/sbin/tini", "--"]
+          args:
+            - flood
+            - --rtsocket
+            - {{ .Values.rtorrentSocket }}
+            {{- if .Values.floodNoAuth }}
+            - --auth
+            - none
+            {{- end }}
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- end }}
           ports:
             - containerPort: {{ .Values.webuiPort }}
               name: webui

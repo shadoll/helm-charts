@@ -48,6 +48,22 @@ fetch_latest() {
                 version=$(curl -s -H "Authorization: Bearer $token" "https://ghcr.io/v2/${repo}/tags/list?n=10000" | jq -r '.tags[]' | grep -E "$pattern" | sort -V -r | head -1)
             fi
             ;;
+        "ghcr-tags-build")
+            # For images tagged as <base>-<build-number>-linux-<arch>; sorts by build number to find latest base tag.
+            local repo="${source_data%%:*}"
+            local pattern="${source_data#*:}"
+            [ "$pattern" = "$source_data" ] && pattern='^.*-[0-9]+-linux-amd64$'
+            local token
+            token=$(curl -s "https://ghcr.io/token?scope=repository:${repo}:pull" | jq -r '.token // empty')
+            if [ -n "$token" ]; then
+                version=$(curl -s -H "Authorization: Bearer $token" "https://ghcr.io/v2/${repo}/tags/list?n=10000" \
+                    | jq -r '.tags[]' \
+                    | grep -E "$pattern" \
+                    | sort -t'-' -k3 -rn \
+                    | head -1 \
+                    | sed 's/-[0-9]*-linux-.*$//')
+            fi
+            ;;
         *)
             return 1
             ;;

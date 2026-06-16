@@ -20,13 +20,6 @@ spec:
       {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) .Values.service.nodePorts.webui }}
       nodePort: {{ .Values.service.nodePorts.webui }}
       {{- end }}
-    - name: rpc
-      port: {{ .Values.rpcPort }}
-      targetPort: {{ .Values.rpcPort }}
-      protocol: TCP
-      {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) .Values.service.nodePorts.rpc }}
-      nodePort: {{ .Values.service.nodePorts.rpc }}
-      {{- end }}
     - name: torrent-tcp
       port: {{ .Values.torrentPort }}
       targetPort: {{ .Values.torrentPort }}

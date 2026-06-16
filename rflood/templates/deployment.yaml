@@ -21,6 +21,10 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -37,16 +41,16 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.env }}
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.webuiPort }}
               name: webui
-            - containerPort: {{ .Values.rpcPort }}
-              name: rpc
             - containerPort: {{ .Values.torrentPort }}
               name: torrent-tcp
               protocol: TCP
@@ -57,18 +61,16 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
-            exec:
-              {{- toYaml .Values.livenessProbe.exec | nindent 14 }}
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: config
               mountPath: /config
             - name: data
               mountPath: /data
+            - name: rtorrent-config
+              mountPath: /config/.rtorrent.rc
+              subPath: rtorrent.rc
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -77,3 +79,6 @@ spec:
           hostPath:
             path: {{ .Values.volumes.data.hostPath }}
             type: DirectoryOrCreate
+        - name: rtorrent-config
+          configMap:
+            name: {{ .Release.Name }}-rtorrent-config

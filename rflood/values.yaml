@@ -1,10 +1,9 @@
-# Default values for rflood Helm Chart (hotio/rflood)
+# Default values for rflood Helm Chart (jesec/rtorrent-flood)
 image:
-  repository: ghcr.io/hotio/rflood
+  repository: jesec/rtorrent-flood
   pullPolicy: IfNotPresent
 
-webuiPort: 3000
-rpcPort: 5000
+webuiPort: 3001
 torrentPort: 50000
 
 service:
@@ -12,16 +11,15 @@ service:
   externalTrafficPolicy: ""
   nodePorts:
     webui: null
-    rpc: null
     torrentTcp: null
     torrentUdp: null
 
-env:
-  PUID: "1001"
-  PGID: "1001"
-  UMASK: "002"
-  TZ: "Europe/Kyiv"
-  FLOOD_AUTH: "false"
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+env: {}
 
 resources:
   requests:
@@ -33,14 +31,12 @@ resources:
 
 livenessProbe:
   enabled: true
-  exec:
-    command:
-      - /bin/sh
-      - -c
-      - "timeout 10 rtxmlrpc system.time_seconds > /dev/null 2>&1"
+  httpGet:
+    path: /
+    port: 3001
   initialDelaySeconds: 60
   periodSeconds: 30
-  timeoutSeconds: 15
+  timeoutSeconds: 10
   failureThreshold: 3
 
 persistence:

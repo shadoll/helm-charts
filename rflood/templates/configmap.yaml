@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-rtorrent-config
+  namespace: {{ .Release.Namespace }}
+data:
+  rtorrent.rc: |
+    method.insert = cfg.basedir, private|const|string, (cat,(system.env,HOME),"/.local/share/rtorrent/")
+    session.path.set = (cat,(cfg.basedir),".session/")
+    directory.default.set = /data
+    network.scgi.open_local = (cat,(cfg.basedir),"rtorrent.sock")
+    network.port_range.set = {{ .Values.torrentPort }}-{{ .Values.torrentPort }}
+    network.port_random.set = no
+    network.max_open_files.set = 600
+    network.max_open_sockets.set = 300

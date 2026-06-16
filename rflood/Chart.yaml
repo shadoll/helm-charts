@@ -2,7 +2,7 @@ apiVersion: v2
 name: rflood
 description: rTorrent + Flood (jesec/rtorrent-flood) Helm chart
 type: application
-version: 0.2.0
+version: 0.2.1
 appVersion: "4.14.2"
 annotations:
   version-source: dockerhub-tags-pattern:jesec/rtorrent-flood:^[0-9]+\.[0-9]+\.[0-9]+$

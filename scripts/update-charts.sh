@@ -108,6 +108,7 @@ for chart_dir in "$REPO_ROOT"/*/; do
     # Parse metadata
     source_type=$(grep "version-source:" "$chart_yaml" | sed 's/.*version-source: *//' | tr -d ' ' || true)
     source_pattern=$(grep "version-pattern:" "$chart_yaml" | sed 's/.*version-pattern: *//' | sed 's/^"\(.*\)"$/\1/' || true)
+    version_exclude=$(grep "version-exclude:" "$chart_yaml" | sed 's/.*version-exclude: *"\([^"]*\)".*/\1/' || true)
     current_app_version=$(grep "^appVersion:" "$chart_yaml" | head -1 | sed 's/.*appVersion: *"\([^"]*\)".*/\1/' || true)
     current_chart_version=$(grep "^version:" "$chart_yaml" | head -1 | sed 's/.*version: *//' | tr -d ' ' || true)
 
@@ -129,6 +130,11 @@ for chart_dir in "$REPO_ROOT"/*/; do
     if [ -z "$latest_clean" ]; then
         echo "  Error: Could not fetch latest version."
         ERRORS_FOUND="$ERRORS_FOUND\n- **$chart_name**: could not fetch latest version from $source_type"
+        continue
+    fi
+
+    if [ -n "$version_exclude" ] && [ "$latest_clean" = "$version_exclude" ]; then
+        echo "  Skipping excluded version: $latest_clean"
         continue
     fi
 

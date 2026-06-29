@@ -10,7 +10,7 @@ image:
 # Image used by the seed init container (needs `cp` + `sh`)
 initImage:
   repository: busybox
-  tag: "1.36"
+  tag: "0.17.2"
   pullPolicy: IfNotPresent
 
 timezone: "Europe/Kyiv"

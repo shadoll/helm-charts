@@ -1,0 +1,46 @@
+image:
+  # Uses python:3.12-slim as base; mcp-server-qdrant is installed from PyPI
+  # at container startup, pinned to Chart.appVersion (no official prebuilt
+  # image is published upstream).
+  repository: python
+  pythonTag: "3.12-slim"
+  pullPolicy: IfNotPresent
+
+port: 8000
+
+# stdio | sse | streamable-http (see upstream --transport flag)
+transport: sse
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: QDRANT_API_KEY
+  #   secretKey: QDRANT_API_KEY
+
+# Additional environment variables (non-secret)
+env:
+  QDRANT_URL: "http://qdrant:6333"
+  COLLECTION_NAME: "ai-memory"
+  EMBEDDING_PROVIDER: "fastembed"
+  FASTMCP_SERVER_HOST: "0.0.0.0"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "512Mi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: qdrant-mcp.mcp.example.com
+  #   annotations:
+  #     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+  #     traefik.ingress.kubernetes.io/router.tls: "true"
+  #   tls:
+  #     - hosts:
+  #         - qdrant-mcp.mcp.example.com

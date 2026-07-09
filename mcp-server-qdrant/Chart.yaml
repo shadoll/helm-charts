@@ -1,0 +1,9 @@
+apiVersion: v2
+name: mcp-server-qdrant
+description: MCP server exposing a Qdrant collection as agent-memory tools (store/find)
+type: application
+version: 0.1.0
+appVersion: "0.8.1"
+annotations:
+  version-source: github-release:qdrant/mcp-server-qdrant
+  version-pattern: "s|^v||"

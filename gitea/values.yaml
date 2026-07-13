@@ -1,0 +1,9 @@
+# Values here are passed through to the vendored gitea-charts/gitea subchart
+# (Chart.yaml dependency named "gitea"), so anything set from a consuming
+# HelmRelease must nest one level under `gitea:` — e.g. `gitea.image.tag`,
+# `gitea.gitea.config...`. Environment-specific values (secrets, hosts,
+# resources, DB config) are supplied by each cluster's HelmRelease; this
+# file only pins the auto-tracked image tag default.
+gitea:
+  image:
+    tag: "1.26.1"

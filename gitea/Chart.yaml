@@ -1,0 +1,19 @@
+apiVersion: v2
+name: gitea
+description: >-
+  Gitea git server — thin wrapper around the official gitea-charts/gitea
+  chart. The dependency version below is an exact, manually-reviewed pin:
+  it must only be bumped together with a compatibility check against the
+  appVersion (Gitea image tag), since gitea-charts' init scripts can require
+  a minimum Gitea version (e.g. chart 12.x requires Gitea >=1.26 for its
+  `gitea config edit-ini` init step).
+type: application
+version: 0.1.0
+appVersion: "1.26.1"
+annotations:
+  version-source: github-release:go-gitea/gitea
+  version-pattern: "s|^v||"
+dependencies:
+  - name: gitea
+    version: "12.6.0"
+    repository: "https://dl.gitea.com/charts/"

@@ -6,4 +6,4 @@
 # file only pins the auto-tracked image tag default.
 gitea:
   image:
-    tag: "1.26.1"
+    tag: "1.27.0"

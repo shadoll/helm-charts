@@ -8,8 +8,8 @@ description: >-
   a minimum Gitea version (e.g. chart 12.x requires Gitea >=1.26 for its
   `gitea config edit-ini` init step).
 type: application
-version: 0.1.0
-appVersion: "1.26.1"
+version: 0.1.1
+appVersion: "1.27.0"
 annotations:
   version-source: github-release:go-gitea/gitea
   version-pattern: "s|^v||"

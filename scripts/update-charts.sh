@@ -7,6 +7,13 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 UPDATES_FOUND=""
 ERRORS_FOUND=""
 
+# Authenticate GitHub API calls when a token is available to avoid the 60/hr
+# unauthenticated rate limit (shared across all Actions runners on the same IP).
+GITHUB_AUTH_HEADER=()
+if [ -n "$GITHUB_TOKEN" ]; then
+    GITHUB_AUTH_HEADER=(-H "Authorization: Bearer $GITHUB_TOKEN")
+fi
+
 # Fetch latest version from different sources
 fetch_latest() {
     local source_type=$1
@@ -15,15 +22,15 @@ fetch_latest() {
 
     case "$source_type" in
         "github-release")
-            version=$(curl -sL "https://api.github.com/repos/$source_data/releases/latest" | jq -r '.tag_name // empty')
+            version=$(curl -sL "${GITHUB_AUTH_HEADER[@]}" "https://api.github.com/repos/$source_data/releases/latest" | jq -r '.tag_name // empty')
             ;;
         "github-sha")
             local repo="${source_data%%:*}"
             local branch="${source_data#*:}"
             if [ "$branch" = "$source_data" ]; then
-                branch=$(curl -sL "https://api.github.com/repos/$repo" | jq -r '.default_branch // "main"')
+                branch=$(curl -sL "${GITHUB_AUTH_HEADER[@]}" "https://api.github.com/repos/$repo" | jq -r '.default_branch // "main"')
             fi
-            version=$(curl -sL "https://api.github.com/repos/$repo/commits/$branch" | jq -r '.sha // empty' | cut -c1-7)
+            version=$(curl -sL "${GITHUB_AUTH_HEADER[@]}" "https://api.github.com/repos/$repo/commits/$branch" | jq -r '.sha // empty' | cut -c1-7)
             ;;
         "dockerhub-tags")
             version=$(curl -s "https://registry.hub.docker.com/v2/repositories/$source_data/tags?page_size=100" | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V -r | head -1)

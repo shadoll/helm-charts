@@ -66,8 +66,22 @@ helm install my-ha ./home-assistant -f my-values.yaml
 | `dbInit.enabled` | Enable database initialization job | `false` |
 | `backup.enabled` | Enable automated PostgreSQL backups | `false` |
 | `backup.node` | Pin backup CronJob to specific node | `""` |
+| `http.enabled` | **Deprecated, see below.** Generate `http.yaml` and include it from `configuration.yaml` | `false` |
 
 For detailed configuration, see the [values.yaml](https://github.com/shadoll/helm-charts/blob/main/home-assistant/values.yaml).
+
+## Deprecations
+
+### `http:` config section (removal planned for appVersion 2027.7)
+HA core has migrated the entire `http:` config section — `server_port`, `ip_ban_enabled`,
+`login_attempts_threshold`, `use_x_forwarded_for`, and `trusted_proxies` — out of
+`configuration.yaml`. Setting `http.enabled: true` makes HA log:
+
+> The HTTP configuration in configuration.yaml has already been migrated and is now being
+> ignored. Please remove the http: block from your configuration.yaml.
+
+Leave `http.enabled: false` (the default). The `init-http` init container, the `http:` values
+block, and this section will be removed from the chart once `appVersion` reaches 2027.7.
 
 ## Architecture
 
@@ -75,6 +89,7 @@ For detailed configuration, see the [values.yaml](https://github.com/shadoll/hel
 1. **init-config** (always): Cleans up old log files from PVC.
 2. **init-secrets** (when `haSecrets.enabled`): Generates `/config/secrets.yaml` from K8s Secret key-value pairs.
 3. **init-recorder** (when `postgres.enabled`): Generates `/config/recorder.yaml` with PostgreSQL connection string and appends `recorder: !include recorder.yaml` to `configuration.yaml`.
+4. **init-http** (when `http.enabled`, **deprecated**, see [Deprecations](#deprecations)): Generates `/config/http.yaml` and appends `http: !include http.yaml` to `configuration.yaml`.
 
 ### Logging
 The container patches the HA s6-overlay run script to pass `--log-file /dev/null`, disabling file-based logging. All logs go to stdout and are accessible via `kubectl logs`.

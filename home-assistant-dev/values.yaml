@@ -5,8 +5,13 @@ home-assistant:
 
   hostNetwork: false
 
+  # DEPRECATED: HA core has migrated the http: config section (server_port,
+  # ip_ban_enabled, login_attempts_threshold, use_x_forwarded_for,
+  # trusted_proxies) out of configuration.yaml — it now warns "The HTTP
+  # configuration in configuration.yaml has already been migrated and is
+  # now being ignored". Keep disabled; see home-assistant/values.yaml.
   http:
-    enabled: true
+    enabled: false
 
   homekit:
     enabled: false

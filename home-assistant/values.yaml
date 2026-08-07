@@ -72,6 +72,13 @@ persistence:
       - ReadWriteOnce
     storageClass: ""
 
+# DEPRECATED: HA core has migrated this entire http: config section
+# (server_port, ip_ban_enabled, login_attempts_threshold, use_x_forwarded_for,
+# trusted_proxies) out of configuration.yaml. Setting enabled: true now makes
+# HA log "The HTTP configuration in configuration.yaml has already been
+# migrated and is now being ignored. Please remove the http: block from your
+# configuration.yaml." Leave disabled; this section and the init-http
+# container will be removed from the chart once appVersion reaches 2027.7.
 http:
   enabled: false
   server_port: 8123

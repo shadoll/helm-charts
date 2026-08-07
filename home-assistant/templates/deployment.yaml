@@ -42,6 +42,7 @@ spec:
             - name: config
               mountPath: /config
         {{- if .Values.http.enabled }}
+        # DEPRECATED: see http: comment in values.yaml. Removed once appVersion reaches 2027.7.
         - name: init-http
           image: busybox:latest
           env:

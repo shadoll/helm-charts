@@ -1,0 +1,8 @@
+apiVersion: v2
+name: redis
+description: A Helm chart for Redis
+type: application
+annotations:
+  version-source: dockerhub-tags:library/redis
+version: 0.1.0
+appVersion: "8.10.0"

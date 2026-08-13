@@ -2,8 +2,8 @@ apiVersion: v2
 name: argo-cd
 description: Argo CD umbrella chart wrapping the upstream argoproj/argo-helm chart
 type: application
-version: 0.1.8
-appVersion: "3.5.0"
+version: 0.1.9
+appVersion: "3.5.1"
 annotations:
   version-source: github-release:argoproj/argo-cd
   version-pattern: "s|^v||"

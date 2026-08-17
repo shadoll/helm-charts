@@ -1,3 +1,5 @@
+{{- $portals := include "tfa.portals" . | fromYamlArray -}}
+{{- $domains := include "tfa.domains" . | fromYamlArray -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,21 +9,26 @@ metadata:
 data:
   config.yaml: |
     server:
-      hostname: {{ .Values.hostname | quote }}
+      # One entry per domain served. `domain` scopes the session cookie and
+      # `authHost` is where this service is reachable for that domain.
+      domains:
+        {{- range $domains }}
+        - domain: {{ .domain | quote }}
+          authHost: {{ .authHost | quote }}
+        {{- end }}
 
     tokens:
       sessionLifetime: {{ .Values.tokens.sessionLifetime }}
 
-    cookies:
-      domain: {{ .Values.cookieDomain | quote }}
-
     portals:
-      - name: {{ .Values.portal.name | quote }}
+      {{- range $portals }}
+      - name: {{ .name | quote }}
         providers:
           - pocketID:
-              endpoint: {{ .Values.pocketID.endpoint | quote }}
-              clientID: {{ .Values.pocketID.clientID | quote }}
-              clientSecretFile: "/var/run/secrets/traefik-forward-auth/client-secret"
+              endpoint: {{ .endpoint | quote }}
+              clientID: {{ .clientID | quote }}
+              clientSecretFile: "{{ include "tfa.secretDir" $ }}/{{ .name }}/client-secret"
+      {{- end }}
     {{- with .Values.extraConfig }}
     {{ . | nindent 4 }}
     {{- end }}

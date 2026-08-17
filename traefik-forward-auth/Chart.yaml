@@ -2,7 +2,7 @@ apiVersion: v2
 name: traefik-forward-auth
 description: Forward auth for Traefik (ItalyPaleAle/traefik-forward-auth) with Pocket ID provider
 type: application
-version: 0.1.6
+version: 0.2.0
 appVersion: "4.14.1"
 annotations:
   version-source: github-release:ItalyPaleAle/traefik-forward-auth

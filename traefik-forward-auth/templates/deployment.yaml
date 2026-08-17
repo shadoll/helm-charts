@@ -1,3 +1,4 @@
+{{- $portals := include "tfa.portals" . | fromYamlArray -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,18 +44,24 @@ spec:
             - name: config
               mountPath: /etc/traefik-forward-auth
               readOnly: true
-            - name: client-secret
-              mountPath: /var/run/secrets/traefik-forward-auth
+            {{- range $portals }}
+            # One directory per portal: each has its own OAuth2 client, so each
+            # has its own secret.
+            - name: client-secret-{{ .name }}
+              mountPath: "{{ include "tfa.secretDir" $ }}/{{ .name }}"
               readOnly: true
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: config
           configMap:
             name: {{ .Release.Name }}-config
-        - name: client-secret
+        {{- range $portals }}
+        - name: client-secret-{{ .name }}
           secret:
-            secretName: {{ required "existingSecret is required" .Values.existingSecret }}
+            secretName: {{ .existingSecret }}
             items:
-              - key: client-secret
+              - key: {{ .secretKey }}
                 path: client-secret
+        {{- end }}

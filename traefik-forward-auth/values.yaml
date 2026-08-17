@@ -4,18 +4,45 @@ image:
   # Overrides the image tag; defaults to Chart.AppVersion
   tag: ""
 
-# TFA server hostname (used for OIDC redirects). E.g. "auth.example.com"
-hostname: ""
+# Domains served by this instance. One entry per registrable domain.
+#
+# `domain` scopes the session cookie; `authHost` is where this service is
+# reachable for that domain, and must be it or a sub-domain of it.
+#
+# A browser will not send a cookie scoped to one registrable domain to a host
+# under another, so an app on a second domain needs its own entry here. A second
+# OAuth2 client alone does not solve it.
+domains: []
+  # - domain: example.com
+  #   authHost: auth.example.com
+  # - domain: example.org
+  #   authHost: auth.example.org
 
-# Cookie domain — scope at which the session cookie is valid.
-# Must be a parent of `hostname` (e.g. "example.com" for "auth.example.com").
+# Single-domain shorthand, used when `domains` is empty. Equivalent to one
+# `domains` entry of {domain: cookieDomain, authHost: hostname}.
+hostname: ""
 cookieDomain: ""
 
 tokens:
   sessionLifetime: 24h
 
-# Pocket ID OIDC configuration. `clientID` is a public identifier;
-# `clientSecret` is read from `existingSecret` (key: `client-secret`).
+# Portals. Each is one OAuth2 client, selected by the middleware address
+# (/portals/<name>) — which is how access is separated: grant one Pocket ID
+# application to one group of people and the other to another, and each portal
+# admits only its own.
+#
+# Each portal mounts its secret at
+# /var/run/secrets/traefik-forward-auth/<name>/client-secret.
+portals: []
+  # - name: main
+  #   middlewareName: pocket-id-auth      # default: <release>-<name>
+  #   existingSecret: tfa-main-secret     # must define key `client-secret`
+  #   secretKey: client-secret            # optional, if the key differs
+  #   pocketID:
+  #     endpoint: https://id.example.com
+  #     clientID: "..."
+
+# Single-portal shorthand, used when `portals` is empty.
 pocketID:
   endpoint: ""
   clientID: ""

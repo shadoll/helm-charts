@@ -2,8 +2,8 @@ apiVersion: v2
 name: mikrotik-mcp
 description: MikroTik MCP server Helm chart
 type: application
-version: 0.1.16
-appVersion: "0.14.6"
+version: 0.1.17
+appVersion: "0.14.7"
 annotations:
   version-source: github-release:jeff-nasseri/mikrotik-mcp
   version-pattern: "s|^v||"

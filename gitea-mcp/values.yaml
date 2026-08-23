@@ -3,13 +3,11 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
-command: ["gitea-mcp"]
+command: ["/app/gitea-mcp"]
 args:
   - -t
   - http
-  - --addr
-  - 0.0.0.0
-  - --port
+  - -port
   - "8080"
 
 port: 8080

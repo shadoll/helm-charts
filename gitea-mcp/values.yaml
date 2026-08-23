@@ -1,0 +1,50 @@
+image:
+  repository: docker.gitea.com/gitea-mcp-server
+  tag: latest
+  pullPolicy: IfNotPresent
+
+command: ["gitea-mcp"]
+args:
+  - -t
+  - http
+  - --addr
+  - 0.0.0.0
+  - --port
+  - "8080"
+
+port: 8080
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: GITEA_ACCESS_TOKEN
+  #   secretKey: GITEA_ACCESS_TOKEN
+
+# Additional environment variables (non-secret)
+env:
+  GITEA_HOST: "https://gitea.com"
+  # GITEA_READONLY: "false"
+  # GITEA_SCOPES: ""
+  # GITEA_TOOLS: ""
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: gitea.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - gitea.mcp.example.com
+  # lan:
+  #   host: gitea.mcp.lan
+  #   annotations: {}

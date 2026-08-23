@@ -46,8 +46,15 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            # subPath mounts, not the whole /opt/adguardhome -- the AdGuardHome
+            # binary itself ships inside the image at /opt/adguardhome/AdGuardHome,
+            # so mounting the entire parent directory shadows it.
             - name: data
-              mountPath: /opt/adguardhome
+              mountPath: /opt/adguardhome/work
+              subPath: work
+            - name: data
+              mountPath: /opt/adguardhome/conf
+              subPath: conf
       volumes:
         - name: data
           persistentVolumeClaim:

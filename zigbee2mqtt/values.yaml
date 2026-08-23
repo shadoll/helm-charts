@@ -21,8 +21,13 @@ resources:
     memory: "1Gi"
 
 # Persistent /app/data directory (configuration, device database, coordinator backup)
-volume:
-  hostPath: ""
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
 
 nodeSelector: {}
 tolerations: []

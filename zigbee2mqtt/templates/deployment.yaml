@@ -67,6 +67,5 @@ spec:
               mountPath: /app/data
       volumes:
         - name: data
-          hostPath:
-            path: {{ .Values.volume.hostPath }}
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" .Release.Name) }}

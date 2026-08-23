@@ -19,8 +19,13 @@ resources:
     cpu: "1"
     memory: "512Mi"
 
-volume:
-  hostPath: ""
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
 
 ingresses: {}
   # https:

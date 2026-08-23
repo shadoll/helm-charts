@@ -13,11 +13,13 @@ resources:
     cpu: "2"
     memory: "1Gi"
 
-volumes:
-  work:
-    hostPath: ""
-  conf:
-    hostPath: ""
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
 
 dns:
   enabled: true

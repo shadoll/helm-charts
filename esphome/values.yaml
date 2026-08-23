@@ -16,8 +16,13 @@ resources:
 
 hostNetwork: true
 
-volume:
-  hostPath: ""
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
 
 ingresses: {}
   # https:

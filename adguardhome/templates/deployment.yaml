@@ -46,16 +46,9 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: work
-              mountPath: /opt/adguardhome/work
-            - name: conf
-              mountPath: /opt/adguardhome/conf
+            - name: data
+              mountPath: /opt/adguardhome
       volumes:
-        - name: work
-          hostPath:
-            path: {{ .Values.volumes.work.hostPath }}
-            type: DirectoryOrCreate
-        - name: conf
-          hostPath:
-            path: {{ .Values.volumes.conf.hostPath }}
-            type: DirectoryOrCreate
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" .Release.Name) }}

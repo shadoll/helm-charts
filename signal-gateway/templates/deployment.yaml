@@ -39,6 +39,5 @@ spec:
               mountPath: /home/.local/share/signal-cli
       volumes:
         - name: config
-          hostPath:
-            path: {{ .Values.volume.hostPath }}
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" .Release.Name) }}

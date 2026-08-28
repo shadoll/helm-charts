@@ -1,0 +1,43 @@
+image:
+  # legard/mcp-server-mattermost on Docker Hub -- cloud-ru-tech/mcp-server-mattermost upstream.
+  repository: legard/mcp-server-mattermost
+  tag: ""
+  pullPolicy: IfNotPresent
+
+port: 8000
+
+existingSecret: ""
+secretEnvKeys: []
+  # - envName: MATTERMOST_TOKEN
+  #   secretKey: MATTERMOST_TOKEN
+
+# Additional environment variables (non-secret)
+env:
+  MCP_TRANSPORT: "http"
+  MCP_HOST: "0.0.0.0"
+  MCP_PORT: "8000"
+  MATTERMOST_AUTH_MODE: "static_token"
+  # MATTERMOST_URL: "https://chat.example.com"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: mm.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - mm.mcp.example.com
+  # lan:
+  #   host: mm.mcp.example.lan
+  #   annotations: {}

@@ -1,7 +1,7 @@
 home-assistant:
   image:
     # Must match Chart.yaml appVersion — subchart can't access parent's appVersion
-    tag: "2026.10.0.dev202608280452"
+    tag: "2026.10.0.dev202608290223"
 
   hostNetwork: false
 

@@ -1,0 +1,13 @@
+{{- if .Values.auditLog.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-audit-log
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.auditLog.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.auditLog.size }}
+{{- end }}

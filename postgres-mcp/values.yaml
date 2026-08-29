@@ -1,0 +1,51 @@
+image:
+  repository: freepeak/db-mcp-server
+  tag: ""
+  pullPolicy: IfNotPresent
+
+port: 9092
+
+# Name of a Secret holding the whole multi-database config as one JSON blob
+# (see FreePeak/db-mcp-server's DB_CONFIG env var) -- keeps connection
+# strings/passwords for every database out of a plain ConfigMap.
+existingSecret: ""
+secretConfigKey: "DB_CONFIG"
+
+env:
+  TRANSPORT_MODE: "sse"
+  SERVER_PORT: "9092"
+  LOG_LEVEL: "info"
+
+# Persistent audit log (DB_MCP_AUDIT_LOG) -- one JSONL record per executed
+# statement, including rejected writes against read-only databases. Kept on
+# a small PVC so it survives pod restarts; this is the primary compensating
+# control for a server with broad read/write reach across many databases.
+auditLog:
+  enabled: true
+  dir: /var/log/db-mcp
+  path: /var/log/db-mcp/audit.jsonl
+  storageClass: local-path
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: pg.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - pg.mcp.example.com
+  # lan:
+  #   host: pg.mcp.example.lan
+  #   annotations: {}

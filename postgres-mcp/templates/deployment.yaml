@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/component: mcp
+    app.kubernetes.io/part-of: postgres
+  annotations:
+    version-source: {{ index .Chart.Annotations "version-source" }}
+    version-pattern: {{ index .Chart.Annotations "version-pattern" | quote }}
+spec:
+  replicas: 1
+  strategy:
+    # Not RollingUpdate: two pods would both hold live connections against
+    # the same shared mcp_agent role/config at once, doubling connection
+    # count and audit-log writers for no benefit -- this server has no
+    # per-replica state to preserve, so a brief gap during redeploy is fine.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.port }}
+              name: http
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if .Values.existingSecret }}
+            - name: DB_CONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: {{ .Values.secretConfigKey }}
+            {{- end }}
+            {{- if .Values.auditLog.enabled }}
+            - name: DB_MCP_AUDIT_LOG
+              value: {{ .Values.auditLog.path | quote }}
+            {{- end }}
+          {{- if .Values.auditLog.enabled }}
+          volumeMounts:
+            - name: audit-log
+              mountPath: {{ .Values.auditLog.dir }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.auditLog.enabled }}
+      volumes:
+        - name: audit-log
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-audit-log
+      {{- end }}

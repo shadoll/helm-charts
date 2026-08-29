@@ -5,16 +5,22 @@ image:
 
 port: 9092
 
-# Name of a Secret holding the whole multi-database config as one JSON blob
-# (see FreePeak/db-mcp-server's DB_CONFIG env var) -- keeps connection
-# strings/passwords for every database out of a plain ConfigMap.
+# Name of a Secret holding the whole multi-database config as one JSON blob,
+# mounted as a file at /app/config.json (the image's own CONFIG_PATH
+# default) -- overriding it by file, not the DB_CONFIG env var, because the
+# image ships a baked-in CONFIG_PATH pointing at its own sample config,
+# which a same-named env var does NOT take priority over (file always wins;
+# confirmed empirically -- DB_CONFIG alone silently loaded the sample DBs
+# instead of ours). Keeps connection strings/passwords for every database
+# out of a plain ConfigMap.
 existingSecret: ""
-secretConfigKey: "DB_CONFIG"
+secretConfigKey: "config.json"
 
 env:
   TRANSPORT_MODE: "sse"
   SERVER_PORT: "9092"
   LOG_LEVEL: "info"
+  CONFIG_PATH: "/app/config.json"
 
 # Persistent audit log (DB_MCP_AUDIT_LOG) -- one JSONL record per executed
 # statement, including rejected writes against read-only databases. Kept on

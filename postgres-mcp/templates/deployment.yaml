@@ -48,27 +48,31 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- if .Values.existingSecret }}
-            - name: DB_CONFIG
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.existingSecret }}
-                  key: {{ .Values.secretConfigKey }}
-            {{- end }}
             {{- if .Values.auditLog.enabled }}
             - name: DB_MCP_AUDIT_LOG
               value: {{ .Values.auditLog.path | quote }}
             {{- end }}
-          {{- if .Values.auditLog.enabled }}
           volumeMounts:
+            {{- if .Values.existingSecret }}
+            - name: db-config
+              mountPath: /app/config.json
+              subPath: {{ .Values.secretConfigKey }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.auditLog.enabled }}
             - name: audit-log
               mountPath: {{ .Values.auditLog.dir }}
-          {{- end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.auditLog.enabled }}
       volumes:
+        {{- if .Values.existingSecret }}
+        - name: db-config
+          secret:
+            secretName: {{ .Values.existingSecret }}
+        {{- end }}
+        {{- if .Values.auditLog.enabled }}
         - name: audit-log
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-audit-log
-      {{- end }}
+        {{- end }}

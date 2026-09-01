@@ -58,14 +58,14 @@ dbInit:
   # References keys on existingSecret
   adminPasswordSecretKey: POSTGRES_ADMIN_PASSWORD
   userPasswordSecretKey: POCKET_ID_DB_PASSWORD
-  image: postgres:16-alpine
+  image: postgres:18-alpine
 
 backup:
   db:
     enabled: false
     schedule: "0 4 * * *"
     retentionDays: 7
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     host: postgres-tcp.postgres.svc.cluster.local
     user: pocket_id
     database: pocket_id

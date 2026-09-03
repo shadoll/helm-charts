@@ -2,8 +2,8 @@ apiVersion: v2
 name: broadlinkac2mqtt
 description: Broadlink AC to MQTT bridge - control Broadlink AC units via MQTT
 type: application
-version: 0.1.0
-appVersion: "1.5.5"
+version: 0.1.1
+appVersion: "1.6.0"
 annotations:
   version-source: github-release:ArtemVladimirov/broadlinkac2mqtt
   version-pattern: "s|^v||"

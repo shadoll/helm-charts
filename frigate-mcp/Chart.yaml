@@ -2,8 +2,8 @@ apiVersion: v2
 name: frigate-mcp
 description: Frigate MCP server Helm chart
 type: application
-version: 0.1.1
-appVersion: "sha-7aff47d"
+version: 0.1.2
+appVersion: "sha-8133a84"
 annotations:
   version-source: github-sha:jakekeeys/frigate-mcp
   version-pattern: "s|^|sha-|"

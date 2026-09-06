@@ -1,0 +1,69 @@
+# Default values for eWeLink CUBE OS Helm Chart
+image:
+  repository: ghcr.io/ewelinkcube/cube-os
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# CUBE OS hard-requires host-level network access for LAN device discovery,
+# Matter mDNS advertisement, and its embedded MQTT broker. Instead of
+# hostNetwork (which would collide with any other host-port-80 service on
+# the node, e.g. Traefik), this chart attaches a Multus macvlan interface
+# giving the pod its own dedicated LAN IP. The web UI (port 80) is reachable
+# both directly on that macvlan IP and via the normal ClusterIP Service
+# below (for Traefik ingress) -- the container binds 0.0.0.0 so both work.
+# MQTT (1883) is LAN-facing only, reachable via the macvlan IP.
+macvlan:
+  enabled: true
+  networkName: cubeos-macvlan
+  ip: ""
+  prefixLength: 22
+
+# hostPath mounts (device passthrough) aren't enough on their own -- the
+# cgroup device allowlist still blocks open() on a raw device/socket unless
+# the container is privileged. Vendor docs list --privileged as required.
+security:
+  privileged: true
+
+# D-Bus is only needed for CUBE OS's Matter Hub (controller) and eWeLink
+# Remote (Pilot) features; skip it for basic Wi-Fi/Zigbee-to-Matter bridging.
+dbus:
+  enabled: false
+
+# Zigbee dongle passthrough (optional, needs its own dedicated dongle --
+# can't be shared with another app's exclusive serial access).
+zigbee:
+  enabled: false
+  devicePath: ""
+
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 2Gi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+service:
+  type: ClusterIP
+  port: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: cubeos.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - cubeos.example.com

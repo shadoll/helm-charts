@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      {{- if .Values.macvlan.enabled }}
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[{"name":"{{ .Values.macvlan.networkName }}","ips":["{{ required "macvlan.ip is required" .Values.macvlan.ip }}/{{ .Values.macvlan.prefixLength }}"]}]'
+      {{- end }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            privileged: {{ .Values.security.privileged }}
+          env:
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: mqtt
+              containerPort: 1883
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.dbus.enabled }}
+            - name: dbus
+              mountPath: /host_dbus/system_bus_socket
+              readOnly: true
+            {{- end }}
+            {{- if .Values.zigbee.enabled }}
+            - name: zigbee-dongle
+              mountPath: {{ .Values.zigbee.devicePath }}
+            {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" .Release.Name) }}
+        {{- if .Values.dbus.enabled }}
+        - name: dbus
+          hostPath:
+            path: /run/dbus/system_bus_socket
+            type: Socket
+        {{- end }}
+        {{- if .Values.zigbee.enabled }}
+        - name: zigbee-dongle
+          hostPath:
+            path: {{ .Values.zigbee.devicePath }}
+            type: CharDevice
+        {{- end }}

@@ -2,8 +2,8 @@ apiVersion: v2
 name: mattermost-mcp
 description: Mattermost MCP server Helm chart
 type: application
-version: 0.1.0
-appVersion: "0.5.1"
+version: 0.1.1
+appVersion: "0.6.1"
 annotations:
   version-source: github-release:cloud-ru-tech/mcp-server-mattermost
   version-pattern: "s|^v||"

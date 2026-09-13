@@ -1,16 +1,20 @@
 Garage {{ .Chart.AppVersion }} has been deployed.
 
-S3 API:   http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3ApiPort }}
+S3 API:    http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3ApiPort }}
 Admin API: http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.adminPort }}
 {{- if .Values.garage.web.enabled }}
-Web:      http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3WebPort }}
+Web:       http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3WebPort }}
 {{- end }}
 
-On first install, the pod's postStart hook assigns and applies a single-node
-layout automatically. Check with:
-  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage status
+REQUIRED one-time setup (Garage does not accept S3/admin traffic until a
+layout is assigned and applied):
 
-Create a bucket and access key with:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage status
+  NODE_ID=$(kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage node id -q | cut -d@ -f1)
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage layout assign -z {{ .Values.garage.zone }} -c {{ .Values.garage.capacity }} "$NODE_ID"
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage layout apply --version 1
+
+Then create a bucket and access key:
   kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage bucket create my-bucket
   kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage key create my-key
   kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage bucket allow --read --write --key my-key my-bucket

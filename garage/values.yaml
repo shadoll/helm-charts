@@ -17,7 +17,8 @@ garage:
   replicationFactor: 1
   consistencyMode: consistent
   dbEngine: sqlite
-  # Zone/capacity used by the layout job to bootstrap a single-node cluster.
+  # Recommended zone/capacity for the one-time manual layout bootstrap
+  # (see NOTES.txt) - `garage layout assign -z <zone> -c <capacity> <node-id>`.
   zone: dc1
   capacity: 100G
   rpcBindAddr: "[::]:3901"
@@ -90,11 +91,6 @@ ingress:
     annotations: {}
     hosts: []
     tls: []
-
-# One-shot Helm hook Job that assigns and applies a single-node layout on
-# first install. Safe to re-run; it exits early once a layout already exists.
-layoutJob:
-  enabled: true
 
 resources:
   requests:

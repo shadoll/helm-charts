@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "garage.fullname" . }}
+  labels:
+    {{- include "garage.labels" . | nindent 4 }}
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "garage.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "garage.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: garage
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - server
+          env:
+            - name: RUST_LOG
+              value: garage=info
+          ports:
+            - name: s3-api
+              containerPort: {{ .Values.service.s3ApiPort }}
+            - name: rpc
+              containerPort: {{ .Values.service.rpcPort }}
+            {{- if .Values.garage.web.enabled }}
+            - name: s3-web
+              containerPort: {{ .Values.service.s3WebPort }}
+            {{- end }}
+            - name: admin
+              containerPort: {{ .Values.service.adminPort }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/garage.toml
+              subPath: garage.toml
+            - name: secrets
+              mountPath: /etc/garage/secrets
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/garage/data
+            - name: meta
+              mountPath: /var/lib/garage/meta
+          {{- if .Values.layoutJob.enabled }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    NODE_ID=""
+                    for i in $(seq 1 60); do
+                      NODE_ID=$(/garage node id -q 2>/dev/null | cut -d@ -f1)
+                      [ -n "$NODE_ID" ] && break
+                      sleep 2
+                    done
+                    [ -z "$NODE_ID" ] && exit 0
+                    if /garage layout show 2>/dev/null | grep -q "$NODE_ID"; then
+                      exit 0
+                    fi
+                    /garage layout assign -z {{ .Values.garage.zone }} -c {{ .Values.garage.capacity }} "$NODE_ID"
+                    VERSION=$(/garage layout show 2>/dev/null | grep -o 'version [0-9]*' | tail -1 | awk '{print $2+1}')
+                    /garage layout apply --version "${VERSION:-1}" || true
+          {{- end }}
+          readinessProbe:
+            tcpSocket:
+              port: s3-api
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: s3-api
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "garage.fullname" . }}
+        - name: secrets
+          secret:
+            secretName: {{ .Values.existingSecret }}
+            items:
+              - key: {{ .Values.secretKeys.rpcSecret }}
+                path: rpc-secret
+              - key: {{ .Values.secretKeys.adminToken }}
+                path: admin-token
+              - key: {{ .Values.secretKeys.metricsToken }}
+                path: metrics-token
+        - name: data
+          {{- if .Values.persistence.data.enabled }}
+          {{- if eq .Values.persistence.data.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.data.hostPath }}
+            type: DirectoryOrCreate
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.data.existingClaim | default (printf "%s-data" (include "garage.fullname" .)) }}
+          {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: meta
+          {{- if .Values.persistence.meta.enabled }}
+          {{- if eq .Values.persistence.meta.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.meta.hostPath }}
+            type: DirectoryOrCreate
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.meta.existingClaim | default (printf "%s-meta" (include "garage.fullname" .)) }}
+          {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

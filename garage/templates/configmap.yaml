@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "garage.fullname" . }}
+  labels:
+    {{- include "garage.labels" . | nindent 4 }}
+data:
+  garage.toml: |
+    metadata_dir = "/var/lib/garage/meta"
+    data_dir = "/var/lib/garage/data"
+    db_engine = {{ .Values.garage.dbEngine | quote }}
+
+    replication_factor = {{ .Values.garage.replicationFactor }}
+    consistency_mode = {{ .Values.garage.consistencyMode | quote }}
+
+    rpc_bind_addr = {{ .Values.garage.rpcBindAddr | quote }}
+    {{- if .Values.garage.rpcPublicAddr }}
+    rpc_public_addr = {{ .Values.garage.rpcPublicAddr | quote }}
+    {{- end }}
+    rpc_secret_file = "/etc/garage/secrets/rpc-secret"
+
+    [s3_api]
+    s3_region = {{ .Values.garage.s3.region | quote }}
+    api_bind_addr = "[::]:{{ .Values.service.s3ApiPort }}"
+    {{- if .Values.garage.s3.rootDomain }}
+    root_domain = {{ .Values.garage.s3.rootDomain | quote }}
+    {{- end }}
+
+    {{- if .Values.garage.web.enabled }}
+    [s3_web]
+    bind_addr = "[::]:{{ .Values.service.s3WebPort }}"
+    {{- if .Values.garage.web.rootDomain }}
+    root_domain = {{ .Values.garage.web.rootDomain | quote }}
+    {{- end }}
+    index = {{ .Values.garage.web.index | quote }}
+    {{- end }}
+
+    [admin]
+    api_bind_addr = "[::]:{{ .Values.service.adminPort }}"
+    admin_token_file = "/etc/garage/secrets/admin-token"
+    metrics_token_file = "/etc/garage/secrets/metrics-token"

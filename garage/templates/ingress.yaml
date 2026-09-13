@@ -1,0 +1,50 @@
+{{- $fullName := include "garage.fullname" . -}}
+{{- $labels := include "garage.labels" . -}}
+{{- $kubeVersion := .Capabilities.KubeVersion.GitVersion -}}
+{{- range $key, $port := (dict "s3" .Values.service.s3ApiPort "web" .Values.service.s3WebPort "admin" .Values.service.adminPort) }}
+{{- $ing := index $.Values.ingress $key }}
+{{- if $ing.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-{{ $key }}
+  labels:
+    {{- $labels | nindent 4 }}
+  {{- with $ing.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $ing.className }}
+  ingressClassName: {{ $ing.className }}
+  {{- end }}
+  {{- if $ing.tls }}
+  tls:
+    {{- range $ing.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range $ing.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if and .pathType (semverCompare ">=1.18-0" $kubeVersion) }}
+            pathType: {{ .pathType }}
+            {{- end }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,109 @@
+# Default values for garage.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: dxflrs/garage
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+garage:
+  replicationFactor: 1
+  consistencyMode: consistent
+  dbEngine: sqlite
+  # Zone/capacity used by the layout job to bootstrap a single-node cluster.
+  zone: dc1
+  capacity: 100G
+  rpcBindAddr: "[::]:3901"
+  # Address other nodes would use to reach this one. Not needed for a
+  # single-node (replicationFactor: 1) deployment - leave empty.
+  rpcPublicAddr: ""
+  s3:
+    region: garage
+    rootDomain: ""
+  web:
+    enabled: false
+    rootDomain: ""
+    index: index.html
+
+# Secret must contain the keys named below (rpc-secret, admin-token,
+# metrics-token). Charts never create secrets - provide an existingSecret.
+existingSecret: ""
+secretKeys:
+  rpcSecret: rpc-secret
+  adminToken: admin-token
+  metricsToken: metrics-token
+
+persistence:
+  data:
+    enabled: true
+    type: hostPath # or pvc
+    hostPath: /srv/data/garage/data
+    existingClaim: ""
+    size: 50Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
+  meta:
+    enabled: true
+    type: hostPath # or pvc
+    hostPath: /srv/data/garage/meta
+    existingClaim: ""
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: ""
+
+service:
+  type: ClusterIP
+  s3ApiPort: 3900
+  rpcPort: 3901
+  s3WebPort: 3902
+  adminPort: 3903
+
+ingress:
+  s3:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: s3.garage.lan
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  web:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    tls: []
+  admin:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    tls: []
+
+# One-shot Helm hook Job that assigns and applies a single-node layout on
+# first install. Safe to re-run; it exits early once a layout already exists.
+layoutJob:
+  enabled: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+nodeSelector: {}
+affinity: {}
+tolerations: []

@@ -1,0 +1,16 @@
+Garage {{ .Chart.AppVersion }} has been deployed.
+
+S3 API:   http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3ApiPort }}
+Admin API: http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.adminPort }}
+{{- if .Values.garage.web.enabled }}
+Web:      http://{{ include "garage.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.s3WebPort }}
+{{- end }}
+
+On first install, the pod's postStart hook assigns and applies a single-node
+layout automatically. Check with:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage status
+
+Create a bucket and access key with:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage bucket create my-bucket
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage key create my-key
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "garage.fullname" . }} -- /garage bucket allow --read --write --key my-key my-bucket

@@ -72,6 +72,7 @@ spec:
         - name: secrets
           secret:
             secretName: {{ .Values.existingSecret }}
+            defaultMode: 0600
             items:
               - key: {{ .Values.secretKeys.rpcSecret }}
                 path: rpc-secret

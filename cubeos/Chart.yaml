@@ -2,8 +2,8 @@ apiVersion: v2
 name: cubeos
 description: eWeLink CUBE OS - bridges eWeLink Wi-Fi and Zigbee devices into Matter
 type: application
-version: 0.1.0
-appVersion: "2.13.1"
+version: 0.1.1
+appVersion: "2.14.0"
 annotations:
   version-source: github-release:eWeLinkCUBE/CUBE-OS
   version-pattern: "s|^v||"

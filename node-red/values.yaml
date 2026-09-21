@@ -1,0 +1,60 @@
+# Default values for Node-RED Helm Chart
+image:
+  repository: nodered/node-red
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# Container port exposed by the Node-RED editor / HTTP endpoints
+httpPort: 1880
+
+service:
+  type: ClusterIP
+  port: 1880
+
+# Extra environment variables (rendered as name/value pairs).
+# Node-RED flows read these via env.get() / ${VAR} in node config.
+env: {}
+  # HOME_ASSISTANT_URL: http://home-assistant.home-assistant.svc.cluster.local
+
+# The nodered/node-red image runs as uid/gid 1000; fsGroup makes the PVC writable
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+# Persistent /data directory (flows, credentials, installed palette nodes)
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: node-red.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - node-red.example.com

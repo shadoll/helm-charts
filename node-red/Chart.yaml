@@ -1,0 +1,12 @@
+apiVersion: v2
+name: node-red
+description: >-
+  Node-RED flow-based automation. Own chart (not a wrapper): Node-RED is a
+  single Deployment + Service + PVC + Ingress, so the image is tracked
+  directly off node-red/node-red releases via the annotation below and
+  scripts/update-charts.sh — no upstream chart in the loop to pin or bump.
+type: application
+version: 0.1.0
+appVersion: "5.0.7"
+annotations:
+  version-source: github-release:node-red/node-red

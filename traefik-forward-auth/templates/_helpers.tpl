@@ -29,6 +29,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 - name: {{ .name | quote }}
   endpoint: {{ .pocketID.endpoint | quote }}
   clientID: {{ .pocketID.clientID | quote }}
+  enablePKCE: {{ if hasKey .pocketID "enablePKCE" }}{{ .pocketID.enablePKCE }}{{ else }}true{{ end }}
   existingSecret: {{ required "each portal needs an existingSecret" .existingSecret | quote }}
   secretKey: {{ .secretKey | default "client-secret" | quote }}
   middlewareName: {{ .middlewareName | default (printf "%s-%s" $.Release.Name .name) | quote }}
@@ -37,6 +38,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 - name: {{ .Values.portal.name | quote }}
   endpoint: {{ .Values.pocketID.endpoint | quote }}
   clientID: {{ .Values.pocketID.clientID | quote }}
+  enablePKCE: {{ if hasKey .Values.pocketID "enablePKCE" }}{{ .Values.pocketID.enablePKCE }}{{ else }}true{{ end }}
   existingSecret: {{ required "existingSecret is required" .Values.existingSecret | quote }}
   secretKey: "client-secret"
   middlewareName: {{ include "tfa.middlewareName" . | quote }}

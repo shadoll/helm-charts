@@ -41,11 +41,17 @@ portals: []
   #   pocketID:
   #     endpoint: https://id.example.com
   #     clientID: "..."
+  #     enablePKCE: true
 
 # Single-portal shorthand, used when `portals` is empty.
 pocketID:
   endpoint: ""
   clientID: ""
+  # Send a PKCE code_challenge on the authorization request. Pocket ID rejects
+  # the request outright ("This client requires PKCE") when its OIDC client has
+  # PKCE required, which is the default for new clients. Harmless when the
+  # client does not require it, so this defaults on.
+  enablePKCE: true
 
 # Secret containing the client secret. Must define key `client-secret`.
 # Use sealed-secrets to provide this in cluster overlays.

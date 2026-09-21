@@ -27,6 +27,7 @@ data:
           - pocketID:
               endpoint: {{ .endpoint | quote }}
               clientID: {{ .clientID | quote }}
+              enablePKCE: {{ .enablePKCE }}
               clientSecretFile: "{{ include "tfa.secretDir" $ }}/{{ .name }}/client-secret"
       {{- end }}
     {{- with .Values.extraConfig }}

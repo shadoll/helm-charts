@@ -45,6 +45,8 @@ spec:
           env:
             - name: NODERED_URL
               value: {{ required "noderedURL is required" .Values.noderedURL | quote }}
+            - name: NODERED_INSECURE
+              value: {{ .Values.noderedInsecure | quote }}
             - name: MCP_READ_ONLY
               value: {{ .Values.readOnly | quote }}
             - name: MCP_HTTP_TOKEN

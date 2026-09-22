@@ -13,6 +13,11 @@ service:
 # The Node-RED admin API this server drives, e.g. http://node-red:1880
 noderedURL: ""
 
+# Skip TLS verification against noderedURL. Needed when Node-RED is served
+# over https with a self-signed certificate -- Venus OS (Victron Cerbo GX)
+# does exactly that on port 1881.
+noderedInsecure: false
+
 # Refuse every write tool (flow deploy, node install). Leave on unless the
 # agent is meant to change flows.
 readOnly: true

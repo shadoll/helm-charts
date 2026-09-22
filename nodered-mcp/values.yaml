@@ -1,0 +1,52 @@
+image:
+  repository: ghcr.io/fgjcarlos/nodered-mcp
+  pullPolicy: IfNotPresent
+
+# The container's HTTP listener. Upstream's streamable-HTTP transport serves
+# MCP at /mcp on this port.
+port: 8090
+
+service:
+  type: ClusterIP
+  port: 8090
+
+# The Node-RED admin API this server drives, e.g. http://node-red:1880
+noderedURL: ""
+
+# Refuse every write tool (flow deploy, node install). Leave on unless the
+# agent is meant to change flows.
+readOnly: true
+
+# Secret holding the server's own bearer token. Upstream requires
+# MCP_HTTP_TOKEN — the listener binds all interfaces, so there is no
+# "trusted loopback" mode to fall back on.
+existingSecret: ""
+tokenKey: MCP_HTTP_TOKEN
+
+# Additional non-secret environment variables
+env: {}
+
+# Additional secret-backed environment variables
+secretEnvKeys: []
+  # - envName: NODERED_TOKEN
+  #   secretKey: NODERED_TOKEN
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "64Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: red-mcp.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - red-mcp.mcp.example.com

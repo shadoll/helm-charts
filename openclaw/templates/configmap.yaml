@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-seed
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  openclaw.json: |
+    {{- toPrettyJson .Values.config | nindent 4 }}
+  AGENTS.md: |
+    {{- .Values.agentsMd | nindent 4 }}

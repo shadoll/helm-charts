@@ -1,0 +1,14 @@
+apiVersion: v2
+name: openclaw
+description: >-
+  OpenClaw Gateway (personal AI assistant server). Own chart (not a wrapper):
+  upstream ships only raw Kustomize manifests (scripts/k8s/manifests), and the
+  Gateway is a single Deployment + Service + PVC + seed ConfigMap, so the image
+  is tracked directly off openclaw/openclaw releases via the annotation below
+  and scripts/update-charts.sh.
+type: application
+version: 0.1.0
+appVersion: "2026.9.6"
+annotations:
+  version-source: github-release:openclaw/openclaw
+  version-pattern: "s|^v||"

@@ -23,6 +23,7 @@ cd helm-charts
 | [Home Assistant](docs/home-assistant.md) | Home automation with PostgreSQL recorder and managed secrets | Ready |
 | [ESPHome](docs/esphome.md) | ESPHome dashboard with host network for device discovery | Ready |
 | Frigate | NVR with Rockchip RK3588 hardware acceleration (rkmpp + rknn) | Ready |
+| OpenClaw | OpenClaw Gateway (AI assistant server), seed-if-missing config, PVC state | Ready |
 
 ### 3. Usage with FluxCD
 

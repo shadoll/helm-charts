@@ -15,6 +15,10 @@ httpPort: 18789
 service:
   type: ClusterIP
   port: 18789
+  # For LoadBalancer/NodePort: "Local" keeps the real client IP. Required when
+  # gateway.trustedProxies covers the pod CIDR, otherwise SNATed direct
+  # connections look like a proxy without forwarded headers and get rejected.
+  externalTrafficPolicy: ""
 
 # Secret with Gateway/provider credentials, loaded whole via envFrom. Keys
 # become env vars, e.g. OPENCLAW_GATEWAY_TOKEN (required: non-loopback binds

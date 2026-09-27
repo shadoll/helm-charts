@@ -1,5 +1,13 @@
 {{- $tag := .Chart.AppVersion -}}
 {{- with .Values.image.variant }}{{ $tag = printf "%s-%s" $tag . }}{{ end -}}
+{{- $image := printf "%s:%s" .Values.image.repository $tag -}}
+{{- /* Home-relative dirs kept on the PVC as subPath mounts under /home/node.
+     Not the whole $HOME: the image ships Chromium in ~/.cache/ms-playwright. */ -}}
+{{- $paths := list ".openclaw" -}}
+{{- if .Values.claudeCli.enabled }}
+{{- $paths = concat $paths (list ".claude" ".local/bin" ".local/share/claude" ".local/state/claude") -}}
+{{- end }}
+{{- $paths = concat $paths .Values.persistence.extraHomePaths | uniq -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,7 +51,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
-        # Seed-if-missing: the PVC copy owns config after first boot
+        # Creates the PVC subPath dirs as uid 1000 (kubelet would create them
+        # root-owned), then seeds config if missing: the PVC copy owns config
+        # after first boot.
         - name: seed-config
           image: busybox:1.38
           imagePullPolicy: IfNotPresent
@@ -51,9 +61,12 @@ spec:
             - sh
             - -c
             - |
-              [ -f /home/node/.openclaw/openclaw.json ] || cp /seed/openclaw.json /home/node/.openclaw/openclaw.json
-              mkdir -p /home/node/.openclaw/workspace
-              [ -f /home/node/.openclaw/workspace/AGENTS.md ] || cp /seed/AGENTS.md /home/node/.openclaw/workspace/AGENTS.md
+              {{- range $paths }}
+              mkdir -p /data/{{ . }}
+              {{- end }}
+              mkdir -p /data/.openclaw/workspace
+              [ -f /data/.openclaw/openclaw.json ] || cp /seed/openclaw.json /data/.openclaw/openclaw.json
+              [ -f /data/.openclaw/workspace/AGENTS.md ] || cp /seed/AGENTS.md /data/.openclaw/workspace/AGENTS.md
           {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -67,12 +80,52 @@ spec:
               memory: 64Mi
           volumeMounts:
             - name: data
-              mountPath: /home/node/.openclaw
+              mountPath: /data
             - name: seed
               mountPath: /seed
+        {{- if .Values.claudeCli.enabled }}
+        # Claude Code isn't in the image: install it once into the PVC-backed
+        # ~/.local (the native installer self-updates from there afterwards).
+        - name: install-claude
+          image: {{ $image | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - bash
+            - -c
+            - |
+              if [ -x /home/node/.local/bin/claude ]; then
+                echo "claude already installed: $(/home/node/.local/bin/claude --version || true)"
+              else
+                curl -fsSL {{ .Values.claudeCli.installUrl }} | bash
+              fi
+          env:
+            - name: HOME
+              value: /home/node
+            - name: CLAUDE_CONFIG_DIR
+              value: /home/node/.claude
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            {{- range $paths }}
+            - name: data
+              mountPath: /home/node/{{ . }}
+              subPath: {{ . }}
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ $tag }}"
+          image: {{ $image | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - node
@@ -95,6 +148,12 @@ spec:
               value: /home/node/.openclaw
             - name: NODE_ENV
               value: production
+            {{- if .Values.claudeCli.enabled }}
+            # Keeps .claude.json inside ~/.claude (a PVC dir) instead of $HOME;
+            # both OpenClaw and the claude CLI honour it.
+            - name: CLAUDE_CONFIG_DIR
+              value: /home/node/.claude
+            {{- end }}
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -138,8 +197,11 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 3
           volumeMounts:
+            {{- range $paths }}
             - name: data
-              mountPath: /home/node/.openclaw
+              mountPath: /home/node/{{ . }}
+              subPath: {{ . }}
+            {{- end }}
             - name: tmp
               mountPath: /tmp
             - name: shm

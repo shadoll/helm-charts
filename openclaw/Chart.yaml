@@ -7,7 +7,7 @@ description: >-
   is tracked directly off openclaw/openclaw releases via the annotation below
   and scripts/update-charts.sh.
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "2026.9.6"
 annotations:
   version-source: github-release:openclaw/openclaw

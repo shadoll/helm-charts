@@ -18,9 +18,18 @@ service:
 
 # Secret with Gateway/provider credentials, loaded whole via envFrom. Keys
 # become env vars, e.g. OPENCLAW_GATEWAY_TOKEN (required: non-loopback binds
-# refuse to start without gateway auth), ANTHROPIC_OAUTH_TOKEN (Claude
-# setup-token), ANTHROPIC_API_KEY, OPENAI_API_KEY, ... The chart never creates it.
+# refuse to start without gateway auth), OPENAI_API_KEY, ... The chart never
+# creates it.
 existingSecret: ""
+
+# Claude Code CLI for the claude-cli agent runtime (Claude subscription via
+# `claude auth login`, no API key). The image doesn't ship it, so an init
+# container installs it into the PVC once; ~/.claude (login) and the install
+# live on the PVC. Log in once after first deploy:
+#   kubectl exec -it deploy/<release> -- claude auth login
+claudeCli:
+  enabled: false
+  installUrl: https://claude.ai/install.sh
 
 # Extra plain environment variables (rendered as name/value pairs)
 env: {}
@@ -80,10 +89,14 @@ resources:
 # In-memory /dev/shm; Chromium (browser variant) crashes on the 64Mi default
 shmSize: 512Mi
 
-# Persistent ~/.openclaw (config, credentials, agent state DBs, workspace)
+# Persistent home dirs, each a subPath of one PVC mounted under /home/node:
+# ~/.openclaw always (config, credentials, agent state DBs, workspace), plus
+# the Claude CLI dirs when claudeCli.enabled, plus extraHomePaths.
 persistence:
   enabled: true
   existingClaim: ""
+  extraHomePaths: []
+    # - .config/gh
   storageClass: local-path
   accessModes:
     - ReadWriteOnce

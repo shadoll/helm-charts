@@ -6,7 +6,7 @@ description: >-
   directly off node-red/node-red releases via the annotation below and
   scripts/update-charts.sh — no upstream chart in the loop to pin or bump.
 type: application
-version: 0.1.0
-appVersion: "5.0.7"
+version: 0.1.1
+appVersion: "5.0.8"
 annotations:
   version-source: github-release:node-red/node-red

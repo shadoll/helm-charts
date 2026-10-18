@@ -1,0 +1,159 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "monitoring-platform.fullname" . }}-api
+  labels:
+    {{- include "monitoring-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      {{- include "monitoring-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "monitoring-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "monitoring-platform.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if or .Values.postgresql.enabled .Values.nats.enabled }}
+      initContainers:
+        {{- if .Values.postgresql.enabled }}
+        - name: wait-for-postgresql
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until nc -z {{ include "monitoring-platform.postgresHost" . }} 5432; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+        {{- end }}
+        {{- if .Values.nats.enabled }}
+        - name: wait-for-nats
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until nc -z {{ include "monitoring-platform.natsHost" . }} 4222; do
+                echo "Waiting for NATS..."
+                sleep 2
+              done
+        {{- end }}
+      {{- end }}
+      containers:
+      - name: api
+        image: "{{ .Values.image.repository }}-api:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        command: ["./api"]
+        ports:
+        - name: http
+          containerPort: {{ .Values.api.httpPort }}
+          protocol: TCP
+        - name: metrics
+          containerPort: {{ .Values.api.metricsPort }}
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "api"
+        - name: HTTP_PORT
+          value: "{{ .Values.api.httpPort }}"
+        - name: METRICS_PORT
+          value: "{{ .Values.api.metricsPort }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.api.logLevel }}"
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "POSTGRES_URL" "key" "postgres_url" "secret" .Values.postgresql.existingSecret "secretKey" .Values.postgresql.existingSecretKey) | nindent 8 }}
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "NATS_URL" "key" "nats_url" "secret" .Values.nats.existingSecret "secretKey" .Values.nats.existingSecretKey) | nindent 8 }}
+        - name: CHECK_JOB_STREAM
+          value: {{ .Values.scheduler.checkJobStream | quote }}
+        # Must match the scheduler/worker subject: "Run now" publishes
+        # check jobs onto this subject and silently breaks if they diverge.
+        - name: CHECK_JOB_SUBJECT
+          value: {{ .Values.scheduler.checkJobSubject | quote }}
+        - name: CHECK_RESULT_SUBJECT
+          value: "check.results"
+        {{- if .Values.nats.auth.enabled }}
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "NATS_LOCATION_AUTH_ISSUER_SEED" "key" "nats_location_auth_issuer_seed" "secret" .Values.nats.auth.locationIssuerSeedExistingSecret "secretKey" .Values.nats.auth.locationIssuerSeedExistingSecretKey) | nindent 8 }}
+        {{- end }}
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "ADMIN_JWT_SECRET" "key" "admin_jwt_secret" "secret" .Values.secrets.adminJwtSecretExistingSecret "secretKey" .Values.secrets.adminJwtSecretExistingSecretKey) | nindent 8 }}
+        {{- with .Values.api.publicBaseURL }}
+        - name: PUBLIC_BASE_URL
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.api.publicNatsURL }}
+        - name: PUBLIC_NATS_URL
+          value: {{ . | quote }}
+        {{- end }}
+        - name: AUDIT_RETENTION_DAYS
+          value: {{ .Values.auth.auditRetentionDays | quote }}
+        {{- if .Values.auth.oidc.enabled }}
+        - name: OIDC_ENABLED
+          value: "true"
+        - name: OIDC_ISSUER_URL
+          value: {{ .Values.auth.oidc.issuerUrl | quote }}
+        - name: OIDC_CLIENT_ID
+          value: {{ .Values.auth.oidc.clientId | quote }}
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "OIDC_CLIENT_SECRET" "key" "oidc_client_secret" "secret" .Values.secrets.oidcClientSecretExistingSecret "secretKey" .Values.secrets.oidcClientSecretExistingSecretKey) | nindent 8 }}
+        - name: OIDC_SCOPES
+          value: {{ .Values.auth.oidc.scopes | quote }}
+        - name: OIDC_GROUPS_CLAIM
+          value: {{ .Values.auth.oidc.groupsClaim | quote }}
+        - name: OIDC_PROVIDER_LABEL
+          value: {{ .Values.auth.oidc.providerLabel | quote }}
+        - name: OIDC_JIT_PROVISION
+          value: {{ .Values.auth.oidc.jitProvision | quote }}
+        - name: OIDC_JIT_DEFAULT_ROLE
+          value: {{ .Values.auth.oidc.jitDefaultRole | quote }}
+        - name: OIDC_JIT_DEFAULT_TENANT_ID
+          value: {{ .Values.auth.oidc.jitDefaultTenantId | quote }}
+        {{- end }}
+        {{- if include "monitoring-platform.hasSecret" (dict "ctx" . "value" .Values.secrets.probaraSecretsKey "secret" .Values.secrets.probaraSecretsKeyExistingSecret) }}
+        {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "PROBARA_SECRETS_KEY" "key" "probara_secrets_key" "secret" .Values.secrets.probaraSecretsKeyExistingSecret "secretKey" .Values.secrets.probaraSecretsKeyExistingSecretKey) | nindent 8 }}
+        {{- end }}
+        {{- with (include "monitoring-platform.smtpEnv" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.api.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.api.resources | nindent 10 }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

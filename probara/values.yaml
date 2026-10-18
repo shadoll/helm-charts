@@ -1,0 +1,515 @@
+# Default values for probara
+# This is a YAML-formatted file.
+# All values are pre-configured for a working out-of-the-box installation.
+
+# =============================================================================
+# GLOBAL CONFIGURATION
+# =============================================================================
+global:
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+
+# =============================================================================
+# IMAGE CONFIGURATION
+# =============================================================================
+image:
+  repository: ghcr.io/yassinebenameur/probara
+  # Empty = Chart.AppVersion
+  tag: ""
+  pullSecrets: []
+
+# =============================================================================
+# INFRASTRUCTURE - POSTGRESQL (Embedded or External)
+# =============================================================================
+postgresql:
+  # Set to false to use an external PostgreSQL instance
+  enabled: true
+  # External PostgreSQL URL (used when enabled: false)
+  # Example: "postgres://user:password@external-postgres:5432/probara?sslmode=disable"
+  externalUrl: ""
+  # Read the full DSN from an existing Secret instead of externalUrl or the
+  # embedded credentials below. Takes precedence over both. Every workload
+  # reads POSTGRES_URL from it, so the DSN never appears in a PodSpec.
+  existingSecret: ""
+  existingSecretKey: postgres_url
+  # Embedded PostgreSQL configuration (used when enabled: true)
+  image: postgres:16-alpine
+  auth:
+    username: probara
+    password: probara-secret
+    database: probara
+    # Embedded-PostgreSQL server credentials from an existing Secret. Requires
+    # postgresql.existingSecret as well: Helm cannot compose a DSN out of
+    # values it is not allowed to read.
+    existingSecret: ""
+    existingSecretUserKey: postgresql_username
+    existingSecretPasswordKey: postgresql_password
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+# =============================================================================
+# INFRASTRUCTURE - NATS (Embedded or External)
+# =============================================================================
+nats:
+  # Set to false to use an external NATS instance
+  enabled: true
+  # External NATS URL (used when enabled: false)
+  # Example: "nats://external-nats:4222"
+  externalUrl: ""
+  # Read the full NATS URL — credentials included — from an existing Secret
+  # instead of externalUrl or the composed embedded URL. Required when
+  # auth.platformPasswordExistingSecret is set with the embedded broker, since
+  # Helm cannot compose a URL around a password it cannot read.
+  existingSecret: ""
+  existingSecretKey: nats_url
+  # Embedded NATS configuration (used when enabled: true)
+  image: nats:2.10-alpine
+  # Required before private-location workers can connect. The platform user is
+  # trusted for internal services; all other connections go through NATS auth
+  # callout and receive location-scoped subject permissions from the API.
+  auth:
+    enabled: false
+    platformUser: "probara-platform"
+    # Passed to the broker as --user/--pass, substituted by Kubernetes from a
+    # Secret-backed env var, so it never lands in the ConfigMap.
+    platformPassword: ""
+    platformPasswordExistingSecret: ""
+    platformPasswordExistingSecretKey: nats_platform_password
+    # Generate an account seed/public key pair with nsc or nkeys. The seed is
+    # mounted only into the API; NATS receives only the public key.
+    locationIssuerPublicKey: ""
+    locationIssuerSeed: ""
+    locationIssuerSeedExistingSecret: ""
+    locationIssuerSeedExistingSecretKey: nats_location_auth_issuer_seed
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+# =============================================================================
+# AUTH / ENTERPRISE
+# =============================================================================
+auth:
+  # How long audit_log rows are kept (days). 0 = keep forever. Separate from
+  # tenant data retention: audit data is compliance data.
+  auditRetentionDays: 365
+  # OIDC SSO (one IdP per install). The client secret lives under
+  # secrets.oidcClientSecret. Redirect URL defaults to
+  # <api.publicBaseURL>/api/v1/auth/oidc/callback — the IdP must allow it.
+  oidc:
+    enabled: false
+    issuerUrl: ""
+    clientId: ""
+    # Scopes requested from the IdP. Add "groups" when using the in-app OIDC
+    # group→role mappings (Settings → OIDC group mappings) — many IdPs only
+    # emit the groups claim when the scope is requested.
+    scopes: "openid profile email"
+    # ID-token claim holding the user's groups (for group→role mappings).
+    groupsClaim: "groups"
+    # Shown on the login button: "Continue with <providerLabel>"
+    providerLabel: "SSO"
+    # Create accounts on first SSO login (viewer in the default tenant).
+    # Disable to require pre-created users (matched by verified email).
+    jitProvision: true
+    jitDefaultRole: "viewer"
+    jitDefaultTenantId: "00000000-0000-0000-0000-000000000001"
+
+# =============================================================================
+# SECRETS
+# =============================================================================
+secrets:
+  # Chart-wide fallback: one Secret you supply (hand-written, or produced by
+  # External Secrets Operator / Vault / sealed-secrets / SOPS) that backs every
+  # credential without a per-field reference below. When set, the chart renders
+  # no Secret of its own and expects these keys:
+  #   always            postgres_url, nats_url, admin_jwt_secret,
+  #                     probara_secrets_key
+  #   postgresql.enabled  postgresql_username, postgresql_password
+  #   nats.auth.enabled   nats_platform_password (embedded broker only),
+  #                     nats_location_auth_issuer_seed
+  #   oidc enabled      oidc_client_secret
+  # A key the chart asks for but the Secret does not carry keeps the pod in
+  # CreateContainerConfigError — deliberate: silently starting without, say,
+  # probara_secrets_key would store monitor credentials in plaintext.
+  # Per-field <field>ExistingSecret values win over this one and may point at
+  # different Secrets, so chart-managed, chart-wide and per-field sources can be
+  # mixed field by field.
+  existingSecret: ""
+  # Admin JWT secret - CHANGE IN PRODUCTION
+  adminJwtSecret: "change-me-in-production-jwt-secret-minimum-32-chars"
+  adminJwtSecretExistingSecret: ""
+  adminJwtSecretExistingSecretKey: admin_jwt_secret
+  # Initial API key for first login - CHANGE IN PRODUCTION
+  initialApiKey: "probara-initial-api-key-change-me"
+  # At-rest encryption key for monitor/channel config secrets (DB passwords,
+  # connection strings, webhook tokens). 32 random bytes, base64-encoded:
+  #   openssl rand -base64 32
+  # Empty = encryption disabled; secrets are stored in plaintext. SET IN PRODUCTION.
+  probaraSecretsKey: ""
+  probaraSecretsKeyExistingSecret: ""
+  probaraSecretsKeyExistingSecretKey: probara_secrets_key
+  # OIDC client secret (required when auth.oidc.enabled)
+  oidcClientSecret: ""
+  oidcClientSecretExistingSecret: ""
+  oidcClientSecretExistingSecretKey: oidc_client_secret
+  # VAPID private key for status page visitor notifications (status-page only).
+  # Its public half is statusPage.vapid.publicKey and is NOT a secret.
+  # Generate both with `go run ./cmd/admin/gen_vapid_keys`.
+  statusPageVapidPrivateKey: ""
+  statusPageVapidPrivateKeyExistingSecret: ""
+  statusPageVapidPrivateKeyExistingSecretKey: status_page_vapid_private_key
+
+# Extra environment variables appended to EVERY workload (api, scheduler,
+# worker, location workers, alerter, status page, frontend, migrations job).
+# Standard Kubernetes EnvVar entries — plain values or valueFrom secret/
+# configmap references. Use this for settings shared across services, e.g.
+# secrets-key rotation (PROBARA_SECRETS_KEY_V2) or SSRF policy overrides.
+# Per-service variables belong in <service>.extraEnv instead.
+# extraEnv:
+#   - name: HTTP_BLOCK_PRIVATE_IPS
+#     value: "true"
+#   - name: PROBARA_SECRETS_KEY_V2
+#     valueFrom:
+#       secretKeyRef:
+#         name: my-rotation-secret
+#         key: key_v2
+extraEnv: []
+
+# =============================================================================
+# PUBLIC APP URL (notification deep links)
+# =============================================================================
+# Public origin of the operator UI, e.g. "https://probara.example.com". Alert
+# emails render an "open the monitor" button pointing at it. Left empty the
+# button is omitted — a notification linking to a guessed host is worse than one
+# with no link. Rendered into api, alerter and worker alongside the SMTP block.
+appBaseURL: ""
+
+# =============================================================================
+# SMTP (builtin email notification channels)
+# =============================================================================
+# Process-level mail transport for email alert channels. Rendered into the
+# alerter (alert delivery), the worker (async notification dispatch), and the
+# api (the "Test channel" button hits POST /alert-channels/{id}/test, which
+# runs the same plugin Send path in-process). Set it here rather than in a
+# single service's extraEnv — wiring only the alerter gives channels that
+# deliver alerts but fail every test.
+#
+# Leave host empty to disable: email channels then report "mailer not
+# configured" instead of sending.
+#
+# useTLS=true means implicit TLS on connect (SMTPS), NOT STARTTLS — pair it
+# with port 465. Providers advertising 587 expect STARTTLS and will not work.
+smtp:
+  host: ""
+  port: 465
+  useTLS: true
+  # Sender address. Falls back to username when empty.
+  from: ""
+  # Display name on the From header. Code defaults to "Probara Alerts".
+  fromName: ""
+  username: ""
+  # Prefer existingSecret over an inline password. existingSecret must live in
+  # the release namespace; existingSecretKey defaults to "password".
+  password: ""
+  existingSecret: ""
+  existingSecretKey: "password"
+
+# =============================================================================
+# MIGRATIONS JOB
+# =============================================================================
+migrations:
+  enabled: true
+  image:
+    # Uses main image repository with -migrations suffix if not specified
+    repository: ""
+    tag: ""
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  # Extra env vars for the migrations job only (Kubernetes EnvVar entries).
+  extraEnv: []
+
+# =============================================================================
+# API SERVICE
+# =============================================================================
+api:
+  enabled: true
+  replicas: 2
+  httpPort: 8080
+  metricsPort: 9090
+  logLevel: "info"
+  # Externally-reachable URL of the API. Baked into collector install scripts
+  # and push webhook URLs in place of the request Host header (which is
+  # unreliable when the API sits behind the Next.js frontend proxy or other
+  # reverse proxies). Example: "https://probara.example.com"
+  publicBaseURL: ""
+  # NATS address reachable from remote networks, baked into private-location
+  # worker deploy snippets. Requires nats.auth.enabled; expose NATS through TLS
+  # before pointing external locations at it.
+  # Example: "tls://nats.example.com:4222"
+  publicNatsURL: ""
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  # Extra env vars for the API only (Kubernetes EnvVar entries), e.g. SMTP_*,
+  # LLM_*, OIDC tuning, NOTIFY_ASYNC_*.
+  extraEnv: []
+
+# =============================================================================
+# SCHEDULER SERVICE
+# =============================================================================
+scheduler:
+  enabled: true
+  replicas: 1
+  metricsPort: 9090
+  logLevel: "info"
+  # Scheduler-specific configuration
+  checkJobStream: "check-jobs"
+  checkJobSubject: "check.job"
+  intervalSeconds: "5"
+  retentionCleanupEnabled: "true"
+  retentionCleanupHourUTC: "2"
+  retentionCleanupBatchSize: "5000"
+  retentionCleanupMaxRowsPerRun: "200000"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+  # Extra env vars for the scheduler only (Kubernetes EnvVar entries), e.g.
+  # mesh scheduling, purge, or result-ingest tuning.
+  extraEnv: []
+
+# =============================================================================
+# WORKER SERVICE
+# =============================================================================
+worker:
+  enabled: true
+  replicas: 2
+  metricsPort: 9090
+  # Mesh echo port (GET /mesh/echo), served on its own listener so it can be
+  # exposed across networks without exposing /metrics.
+  httpPort: 8080
+  logLevel: "info"
+  # Worker-specific configuration
+  checkJobStream: "check-jobs"
+  checkJobSubject: "check.job"
+  consumerName: "worker"
+  concurrency: "10"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+  # Private-location worker fleets running in THIS cluster. Each entry becomes
+  # its own Deployment consuming only that location's job subject. Locations
+  # outside the cluster use the deploy snippet from the Locations page instead
+  # (only NATS must be reachable from there — never Postgres).
+  # locations:
+  #   - name: eu-west          # DNS-safe suffix for the Deployment name
+  #     locationId: ""         # location UUID from the Locations page (required)
+  #     credential: ""         # LOCATION_CREDENTIAL from deploy info (required)
+  #     replicas: 1
+  #     concurrency: "10"      # optional, defaults to worker.concurrency
+  #     natsUrl: ""            # authenticated NATS URL from deploy info (required)
+  #     # Or take both from a Secret in the release namespace instead, so no
+  #     # location credential lands in the PodSpec. Set it and natsUrl/
+  #     # credential are no longer required.
+  #     existingSecret: ""
+  #     natsUrlKey: nats_url
+  #     credentialKey: credential
+  #     # Optional Service exposing the mesh echo port so OTHER locations can
+  #     # probe this one. Point the location's mesh_endpoint at its address
+  #     # (e.g. an internal NLB reachable across your VPCs).
+  #     meshService:
+  #       enabled: true
+  #       type: ClusterIP      # LoadBalancer for cross-VPC probing
+  #       annotations: {}      # e.g. internal NLB annotations
+  locations: []
+  # Extra env vars for the default worker fleet AND every location worker
+  # (Kubernetes EnvVar entries), e.g. HTTP_ALLOWED_CIDRS or check tuning.
+  # Individual locations entries may also carry their own extraEnv list.
+  extraEnv: []
+
+# =============================================================================
+# ALERTER SERVICE
+# =============================================================================
+alerter:
+  enabled: true
+  # Replicas share no leader; each notification is claimed atomically in
+  # Postgres before it is sent, so running several does not duplicate alerts.
+  replicas: 2
+  metricsPort: 9090
+  logLevel: "info"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+  # Extra env vars for the alerter only (Kubernetes EnvVar entries), e.g.
+  # SMTP_* or notification worker tuning.
+  extraEnv: []
+
+# =============================================================================
+# STATUS PAGE SERVICE
+# =============================================================================
+statusPage:
+  enabled: true
+  replicas: 2
+  httpPort: 8080
+  metricsPort: 9090
+  logLevel: "info"
+  # Base URL for status page links
+  baseUrl: ""
+  service:
+    type: ClusterIP
+    port: 8080
+    # Optional fixed NodePorts (used only when service.type=NodePort).
+    # If left null, Kubernetes assigns a port automatically.
+    nodePort: null
+    metricsNodePort: null
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+  # Visitor browser notifications (Web Push). Both key halves must be set for
+  # the feature to exist: unset means no notification control is rendered and
+  # the push routes 404.
+  #
+  # Mint a pair once with `go run ./cmd/admin/gen_vapid_keys`. Never let the
+  # service generate them: this deployment runs multiple replicas, so each
+  # would mint a different pair and a subscription created against one replica
+  # would be unusable by another. Rotating the pair invalidates every stored
+  # subscription -- push services bind an endpoint to the key that created it
+  # -- and every visitor must opt in again.
+  vapid:
+    # The public key is rendered as a literal `value:` in the PodSpec. This is
+    # a deliberate exception to the chart's never-a-literal rule: it ships
+    # inside every rendered status page as the applicationServerKey, so it is
+    # published data, not a credential. Do not "fix" it into a Secret.
+    publicKey: ""
+    # Contact for the VAPID JWT "sub" claim: a mailto: or https: URI. Some
+    # push services reject a missing or malformed one.
+    subject: ""
+
+  # Extra env vars for the status-page service only (Kubernetes EnvVar
+  # entries), e.g. STATUS_PAGE_PREVIEW_SECRET.
+  extraEnv: []
+
+# =============================================================================
+# FRONTEND SERVICE
+# =============================================================================
+frontend:
+  enabled: true
+  replicas: 2
+  httpPort: 3000
+  apiUrl: "/api"
+  # Public base URL for status page links shown in the frontend.
+  # Defaults to statusPage.baseUrl when empty.
+  statusPageUrl: ""
+  # Runtime API upstream for Next.js server-side API proxy route (/api/*).
+  # Leave empty to use the in-cluster API service automatically when api.enabled=true.
+  # If api.enabled=false, set this to an external/internal Kubernetes service URL
+  # (for example: "http://my-api.my-namespace.svc.cluster.local:8080").
+  apiProxyTarget: ""
+  image:
+    repository: ghcr.io/yassinebenameur/probara-frontend
+    tag: ""
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  # Extra env vars for the frontend only (Kubernetes EnvVar entries).
+  extraEnv: []
+
+# =============================================================================
+# INGRESS
+# =============================================================================
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: probara.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: status.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# =============================================================================
+# SERVICE ACCOUNT
+# =============================================================================
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# =============================================================================
+# POD CONFIGURATION
+# =============================================================================
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false

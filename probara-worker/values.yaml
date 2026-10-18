@@ -1,0 +1,50 @@
+# Probara location worker. Runs checks from this cluster and sends results to
+# the platform over NATS. It needs no database access.
+image:
+  repository: ghcr.io/yassinebenameur/probara-worker
+  # Empty = Chart.AppVersion
+  tag: ""
+  pullPolicy: IfNotPresent
+
+replicas: 1
+concurrency: "10"
+logLevel: info
+
+httpPort: 8080
+metricsPort: 9090
+
+# Location UUID from the platform's Locations page
+locationId: ""
+
+# Secret with the keys below, from the location deploy info of the platform:
+#   nats_url    authenticated NATS URL
+#   credential  LOCATION_CREDENTIAL
+existingSecret: ""
+natsUrlKey: nats_url
+credentialKey: credential
+
+# Must match the platform (scheduler and worker values)
+checkJobStream: check-jobs
+checkJobSubject: check.job
+consumerName: check-workers
+
+# Expose the mesh echo port so other locations can probe this one
+meshService:
+  enabled: false
+  type: ClusterIP
+  annotations: {}
+
+# Additional environment variables (Kubernetes EnvVar entries)
+extraEnv: []
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,116 @@
+{{- if .Values.nats.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "monitoring-platform.fullname" . }}-nats
+  labels:
+    {{- include "monitoring-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nats
+spec:
+  serviceName: {{ include "monitoring-platform.fullname" . }}-nats
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "monitoring-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nats
+  template:
+    metadata:
+      labels:
+        {{- include "monitoring-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nats
+    spec:
+      containers:
+        - name: nats
+          image: "{{ .Values.nats.image }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            {{- if .Values.nats.auth.enabled }}
+            - "-c"
+            - "/etc/nats/nats.conf"
+            # The platform user lives here rather than in nats.conf so the
+            # password never passes through the config parser: Kubernetes
+            # substitutes $(NATS_PLATFORM_PASSWORD) literally, which nats.conf's
+            # own $VAR expansion cannot do safely.
+            - "--user"
+            - {{ .Values.nats.auth.platformUser | quote }}
+            - "--pass"
+            - "$(NATS_PLATFORM_PASSWORD)"
+            {{- else }}
+            - "-js"
+            - "-m"
+            - "8222"
+            - "-sd"
+            - "/data"
+            {{- end }}
+          {{- if .Values.nats.auth.enabled }}
+          env:
+            # Referenced as $(NATS_PLATFORM_PASSWORD) in args above, substituted
+            # by Kubernetes, so the password stays out of the ConfigMap.
+            {{- include "monitoring-platform.secretEnv" (dict "ctx" . "name" "NATS_PLATFORM_PASSWORD" "key" "nats_platform_password" "secret" .Values.nats.auth.platformPasswordExistingSecret "secretKey" .Values.nats.auth.platformPasswordExistingSecretKey) | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: client
+              containerPort: 4222
+              protocol: TCP
+            - name: monitor
+              containerPort: 8222
+              protocol: TCP
+            - name: cluster
+              containerPort: 6222
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: monitor
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: monitor
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.nats.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.nats.auth.enabled }}
+            - name: config
+              mountPath: /etc/nats
+              readOnly: true
+            {{- end }}
+      {{- if or (not .Values.nats.persistence.enabled) .Values.nats.auth.enabled }}
+      volumes:
+        {{- if not .Values.nats.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.nats.auth.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "monitoring-platform.fullname" . }}-nats-config
+        {{- end }}
+      {{- end }}
+  {{- if .Values.nats.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if .Values.nats.persistence.storageClass }}
+        storageClassName: {{ .Values.nats.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.nats.persistence.size }}
+  {{- end }}
+{{- end }}
+
+
+

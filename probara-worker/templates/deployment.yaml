@@ -24,6 +24,10 @@ spec:
         fsGroup: 1000
         runAsNonRoot: true
         runAsUser: 1000
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

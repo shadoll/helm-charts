@@ -5,6 +5,8 @@ image:
   # Empty = Chart.AppVersion
   tag: ""
   pullPolicy: IfNotPresent
+  # Secrets for a private registry, for example [{name: regcred}]
+  pullSecrets: []
 
 replicas: 1
 concurrency: "10"

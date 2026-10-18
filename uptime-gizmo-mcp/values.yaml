@@ -1,0 +1,47 @@
+# Default values for the Uptime Gizmo MCP Helm Chart
+image:
+  repository: node
+  tag: "22-alpine"
+  pullPolicy: IfNotPresent
+
+# The upstream mcp-server speaks stdio only. At startup the pod downloads it
+# from source.repo at source.ref, installs it, and serves it with supergateway
+# as streamable HTTP at /mcp.
+source:
+  repo: starit/uptime-gizmo
+  # Full commit SHA of the upstream repository. Review the diff before changing.
+  ref: 4ce4fe6f694230af5673d66f614ef40d25b7e15c
+supergatewayVersion: "4.2.0"
+
+port: 8000
+mcpPath: /mcp
+
+# Base URL of the Uptime Gizmo instance (use the in-cluster service)
+uptimeURL: ""
+
+# Secret with the Uptime Gizmo API key (created in Settings -> API Keys).
+# The key's own read-only/writable setting decides what the tools may do.
+existingSecret: ""
+apiKeySecretKey: UPTIME_GIZMO_API_KEY
+
+# Additional non-secret environment variables
+env: {}
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+nodeSelector: {}
+tolerations: []
+
+ingresses: {}
+  # https:
+  #   host: uptime.mcp.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - uptime.mcp.example.com

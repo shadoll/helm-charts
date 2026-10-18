@@ -1,0 +1,9 @@
+apiVersion: v2
+name: uptime-gizmo-mcp
+description: MCP server for Uptime Gizmo, served over streamable HTTP
+type: application
+version: 0.1.0
+# Version of the upstream mcp-server package. The code itself is pinned by
+# source.ref in values.yaml; no version-source annotation on purpose, so a new
+# upstream commit never reaches a pod that holds an API key without review.
+appVersion: "0.1.0"

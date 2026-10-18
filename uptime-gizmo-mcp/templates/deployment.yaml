@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /app
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              base="https://raw.githubusercontent.com/{{ .Values.source.repo }}/{{ .Values.source.ref }}/mcp-server"
+              wget -q -O index.mjs "$base/index.mjs"
+              wget -q -O package.json "$base/package.json"
+              npm install --omit=dev --no-audit --no-fund --silent
+              npm install --no-save --no-audit --no-fund --silent supergateway@{{ .Values.supergatewayVersion }}
+              exec ./node_modules/.bin/supergateway \
+                --stdio "node /app/index.mjs" \
+                --outputTransport streamableHttp \
+                --port {{ .Values.port }} \
+                --streamableHttpPath {{ .Values.mcpPath }} \
+                --healthEndpoint /health
+          ports:
+            - containerPort: {{ .Values.port }}
+              name: http
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /tmp
+            - name: UPTIME_GIZMO_URL
+              value: {{ required "uptimeURL is required" .Values.uptimeURL | quote }}
+            - name: UPTIME_GIZMO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "existingSecret is required" .Values.existingSecret }}
+                  key: {{ .Values.apiKeySecretKey }}
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: app
+              mountPath: /app
+      volumes:
+        - name: app
+          emptyDir: {}

@@ -2,7 +2,7 @@ apiVersion: v2
 name: probara-worker
 description: Probara check worker for a remote location (connects to the platform over NATS only)
 type: application
-version: 1.0.1
+version: 1.0.2
 appVersion: "1.0.0"
 annotations:
   version-source: github-release:yassinebenameur/probara

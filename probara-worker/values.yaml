@@ -9,6 +9,10 @@ image:
   pullSecrets: []
 
 replicas: 1
+
+# Run in the node network namespace, to check hosts that pods cannot reach.
+# Set httpPort and metricsPort to ports that are free on the node.
+hostNetwork: false
 concurrency: "10"
 logLevel: info
 

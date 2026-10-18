@@ -7,6 +7,9 @@ releases.
 
 Changes against upstream:
 
+- `nats.websocket.enabled`: optional NATS WebSocket listener (`nats-configmap.yaml`, `nats-service.yaml`,
+  `nats-statefulset.yaml`). Upstream's NATS client does not support TLS-first, so a TLS-terminating proxy needs `wss://`.
+
 - `Chart.yaml`: `version-source` / `version-pattern` annotations for the update script.
 - Image tags default to `Chart.AppVersion` (`image.tag` and `frontend.image.tag` are empty by default,
   upstream defaults to `latest`).

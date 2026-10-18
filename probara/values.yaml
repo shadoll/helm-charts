@@ -90,6 +90,10 @@ nats:
     locationIssuerSeed: ""
     locationIssuerSeedExistingSecret: ""
     locationIssuerSeedExistingSecretKey: nats_location_auth_issuer_seed
+  # WebSocket listener (port 8080, no TLS) for remote location workers that
+  # connect with wss:// through a TLS-terminating proxy. Needs nats.auth.enabled.
+  websocket:
+    enabled: false
   persistence:
     enabled: true
     size: 1Gi

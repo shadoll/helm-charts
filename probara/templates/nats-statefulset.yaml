@@ -52,6 +52,11 @@ spec:
             - name: client
               containerPort: 4222
               protocol: TCP
+            {{- if .Values.nats.websocket.enabled }}
+            - name: websocket
+              containerPort: 8080
+              protocol: TCP
+            {{- end }}
             - name: monitor
               containerPort: 8222
               protocol: TCP

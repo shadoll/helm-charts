@@ -13,6 +13,12 @@ spec:
       targetPort: client
       protocol: TCP
       name: client
+    {{- if .Values.nats.websocket.enabled }}
+    - port: 8080
+      targetPort: websocket
+      protocol: TCP
+      name: websocket
+    {{- end }}
     - port: 8222
       targetPort: monitor
       protocol: TCP

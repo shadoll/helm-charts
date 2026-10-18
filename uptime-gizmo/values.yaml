@@ -1,0 +1,46 @@
+# Default values for Uptime Gizmo Helm Chart
+image:
+  repository: starit/uptime-gizmo
+  # Defaults to Chart.AppVersion
+  tag: ""
+  pullPolicy: IfNotPresent
+
+port: 3001
+
+# sqlite keeps the database on the data volume (no extra setup).
+# mariadb uses an external server; credentials come from an existing secret.
+# Uptime Gizmo cannot open an Uptime Kuma database newer than 2.5.0, so
+# always point it at an empty database.
+database:
+  type: sqlite
+  host: mariadb.mariadb.svc.cluster.local
+  port: "3306"
+  existingSecret: ""
+  secretKeys:
+    dbName: db-name
+    dbUsername: db-username
+    dbPassword: db-password
+
+dockerSocket:
+  enabled: false
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 5Gi
+
+ingresses: {}
+  # https:
+  #   host: uptime.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - uptime.example.com

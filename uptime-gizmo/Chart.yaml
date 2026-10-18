@@ -1,0 +1,8 @@
+apiVersion: v2
+name: uptime-gizmo
+description: Uptime Gizmo (Uptime Kuma fork with REST API and MCP) Helm chart
+type: application
+version: 0.1.0
+appVersion: "3.0.0-beta.9"
+annotations:
+  version-source: dockerhub-tags-pattern:starit/uptime-gizmo:^3\.0\.0-beta\.[0-9]+$

@@ -2,8 +2,8 @@ apiVersion: v2
 name: probara
 description: Probara monitoring platform (api, scheduler, workers, alerter, status page, web UI)
 type: application
-version: 1.0.1
-appVersion: "1.0.0"
+version: 1.0.2
+appVersion: "2.0.0"
 annotations:
   version-source: github-release:yassinebenameur/probara
   version-pattern: "s|^v||"

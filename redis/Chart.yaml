@@ -4,5 +4,5 @@ description: A Helm chart for Redis
 type: application
 annotations:
   version-source: dockerhub-tags:library/redis
-version: 0.1.2
-appVersion: "8.10.2"
+version: 0.1.3
+appVersion: "8.10.3"

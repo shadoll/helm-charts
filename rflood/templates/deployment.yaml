@@ -37,6 +37,17 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        # An unclean stop (node reboot, OOM kill) leaves a stale lock and socket on the config volume.
+        # rTorrent then refuses to start. The Recreate strategy and the RWO volume guarantee that no other
+        # rTorrent uses this session directory, so removing both files is safe.
+        - name: clean-stale-locks
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c", "rm -f /config/session/rtorrent.lock {{ .Values.rtorrentSocket }}"]
+          volumeMounts:
+            - name: config
+              mountPath: /config
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"

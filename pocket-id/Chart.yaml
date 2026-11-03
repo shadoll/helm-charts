@@ -2,8 +2,8 @@ apiVersion: v2
 name: pocket-id
 description: Pocket ID Helm chart
 type: application
-version: 0.1.17
-appVersion: "2.19.1"
+version: 0.1.18
+appVersion: "2.19.2"
 annotations:
   version-source: github-release:pocket-id/pocket-id
   version-pattern: "s|^v||"

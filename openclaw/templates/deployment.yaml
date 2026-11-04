@@ -123,6 +123,47 @@ spec:
             - name: tmp
               mountPath: /tmp
         {{- end }}
+        # An image upgrade can raise the schema version of the agent database.
+        # The Gateway then refuses to start until `doctor --fix` migrates it.
+        # The safe migrations run here, before each start, so no manual step is needed.
+        # A failure does not block the start: the Gateway prints the real error.
+        - name: migrate
+          image: {{ $image | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - node /app/dist/index.js doctor --fix --non-interactive || echo "doctor exited with $?"
+          env:
+            - name: HOME
+              value: /home/node
+            - name: OPENCLAW_CONFIG_DIR
+              value: /home/node/.openclaw
+            - name: NODE_ENV
+              value: production
+            {{- if .Values.claudeCli.enabled }}
+            - name: CLAUDE_CONFIG_DIR
+              value: /home/node/.claude
+            {{- end }}
+          {{- with .Values.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- range $paths }}
+            - name: data
+              mountPath: /home/node/{{ . }}
+              subPath: {{ . }}
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $image | quote }}

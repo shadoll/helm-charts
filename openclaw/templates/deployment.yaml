@@ -67,9 +67,9 @@ spec:
               mkdir -p /data/.openclaw/workspace
               # The gateway refuses a temp dir that is group or world writable.
               # fsGroup sets group access on the PVC at each mount, so make
-              # the fallback temp dir private after the mount.
+              # the state dir and its temp dir private after the mount.
               mkdir -p /data/.openclaw/tmp
-              chmod 700 /data/.openclaw/tmp
+              chmod 700 /data/.openclaw /data/.openclaw/tmp
               [ -f /data/.openclaw/openclaw.json ] || cp /seed/openclaw.json /data/.openclaw/openclaw.json
               [ -f /data/.openclaw/workspace/AGENTS.md ] || cp /seed/AGENTS.md /data/.openclaw/workspace/AGENTS.md
           {{- with .Values.containerSecurityContext }}

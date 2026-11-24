@@ -2,8 +2,8 @@ apiVersion: v2
 name: postgres-mcp
 description: Multi-database Postgres MCP server Helm chart (FreePeak/db-mcp-server)
 type: application
-version: 0.1.4
-appVersion: "1.14.1"
+version: 0.1.5
+appVersion: "1.15.1"
 annotations:
   version-source: github-release:FreePeak/db-mcp-server
   version-pattern: "s|^v||"

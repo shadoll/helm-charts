@@ -1,0 +1,9 @@
+apiVersion: v2
+name: scrypted
+description: >-
+  Scrypted camera platform (HomeKit Secure Video bridge). Own chart: one
+  Deployment + Service + PVC + Ingress. TEST chart: the image tag is set in
+  values and is not auto-bumped (no version-source annotation on purpose).
+type: application
+version: 0.1.0
+appVersion: "0.148.5"

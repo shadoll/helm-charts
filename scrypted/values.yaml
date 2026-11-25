@@ -1,0 +1,41 @@
+# Default values for the Scrypted Helm chart (test deployment)
+image:
+  repository: ghcr.io/koush/scrypted
+  # Docker Hub / ghcr tags: v<version>-noble-lite, -noble-full, ...
+  tag: "v0.148.5-noble-lite"
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# HomeKit (mDNS) needs the node LAN address. The chart runs Scrypted's own
+# avahi (SCRYPTED_DOCKER_AVAHI) because the node has no avahi-daemon.
+hostNetwork: true
+
+httpsPort: 10443
+
+service:
+  type: ClusterIP
+  port: 10443
+
+env: {}
+
+# /server/volume: Scrypted database, plugins, HomeKit pairing state
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "4"
+    memory: "2Gi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

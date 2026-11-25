@@ -1,5 +1,5 @@
 apiVersion: v2
-name: nodered-mcp
+name: node-red-mcp
 description: MCP server exposing a Node-RED instance's admin API as agent tools (fgjcarlos/nodered-mcp)
 type: application
 version: 0.1.3

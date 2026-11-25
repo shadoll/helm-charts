@@ -1,0 +1,13 @@
+apiVersion: v2
+name: go2rtc
+description: >-
+  go2rtc camera proxy (RTSP, WebRTC, MSE, HomeKit). Own chart (not a wrapper):
+  one Deployment + ConfigMap + Service + PVC + Ingress. The image tag is the
+  chart appVersion, which scripts/update-charts.sh bumps from AlexxIT/go2rtc
+  releases through the annotation below.
+type: application
+version: 0.1.0
+appVersion: "1.9.15"
+annotations:
+  version-source: github-release:AlexxIT/go2rtc
+  version-pattern: "s|^v||"

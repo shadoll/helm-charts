@@ -1,0 +1,65 @@
+# Default values for the go2rtc Helm chart
+image:
+  repository: alexxit/go2rtc
+  # Empty tag = chart appVersion (bumped by scripts/update-charts.sh)
+  tag: ""
+  pullPolicy: IfNotPresent
+
+timezone: "Europe/Kyiv"
+
+# HomeKit (mDNS) and WebRTC (UDP) need the real LAN address of the node.
+# Keep true unless the cameras are proxied through the Service only.
+hostNetwork: true
+
+apiPort: 1984
+rtspPort: 8554
+webrtcPort: 8555
+
+service:
+  type: ClusterIP
+  port: 1984
+  rtspPort: 8554
+
+# go2rtc configuration (YAML text). It is mounted read-only at
+# /config/go2rtc.yaml. Use ${VAR} for secrets: the variables come from
+# existingSecret. Pairing data of the HomeKit server is NOT written here
+# (see persistence).
+config: |
+  api:
+    listen: ":1984"
+  streams: {}
+
+# Existing Secret. Every key becomes an environment variable of the container.
+existingSecret: ""
+
+# State file of go2rtc (/data/state.yaml). go2rtc writes the HomeKit pairings
+# into the first config file it gets, so this small file must be writable and
+# must survive a restart. It is passed as the first and the last `-c` option,
+# so its pairings win over the read-only /config/go2rtc.yaml.
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 100Mi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingresses: {}
+  # https:
+  #   host: cams.example.com
+  #   annotations: {}
+  #   tls:
+  #     - hosts:
+  #         - cams.example.com

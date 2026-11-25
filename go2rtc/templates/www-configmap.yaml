@@ -1,0 +1,11 @@
+{{- if .Values.customWww.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-www
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  {{- (.Files.Glob "www/*").AsConfig | nindent 2 }}
+{{- end }}

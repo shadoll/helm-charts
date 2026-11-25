@@ -6,7 +6,7 @@ description: >-
   chart appVersion, which scripts/update-charts.sh bumps from AlexxIT/go2rtc
   releases through the annotation below.
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "1.9.15"
 annotations:
   version-source: github-release:AlexxIT/go2rtc

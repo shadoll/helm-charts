@@ -23,6 +23,9 @@ spec:
         app: {{ .Release.Name }}
       annotations:
         checksum/config: {{ .Values.config | sha256sum }}
+        {{- if .Values.customWww.enabled }}
+        checksum/www: {{ (.Files.Glob "www/*").AsConfig | sha256sum }}
+        {{- end }}
     spec:
       {{- if .Values.hostNetwork }}
       hostNetwork: true
@@ -115,6 +118,11 @@ spec:
             - name: config
               mountPath: /config
               readOnly: true
+            {{- if .Values.customWww.enabled }}
+            - name: www
+              mountPath: /www
+              readOnly: true
+            {{- end }}
             {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: /data
@@ -123,6 +131,11 @@ spec:
         - name: config
           configMap:
             name: {{ .Release.Name }}-config
+        {{- if .Values.customWww.enabled }}
+        - name: www
+          configMap:
+            name: {{ .Release.Name }}-www
+        {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: data
           persistentVolumeClaim:

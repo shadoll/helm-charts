@@ -29,6 +29,14 @@ config: |
     listen: ":1984"
   streams: {}
 
+# Patched copy of the go2rtc web UI (www/ in this chart, taken from the release
+# in www/VERSION). It hides the mode label (RTC, MSE) in the video corner.
+# It is mounted at /www. Set `api.static_dir: /www` in `config` to use it.
+# When appVersion changes, refresh www/ from the same tag of AlexxIT/go2rtc and
+# apply the small patch in www/video-stream.js again.
+customWww:
+  enabled: true
+
 # Existing Secret. Every key becomes an environment variable of the container.
 existingSecret: ""
 
